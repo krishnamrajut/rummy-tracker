@@ -1,0 +1,1952 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#f4f1eb">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Rummy">
+<link rel="manifest" href="data:application/json;charset=utf-8,%7B%22name%22%3A%22Indian+Rummy+Tracker%22%2C%22short_name%22%3A%22Rummy%22%2C%22start_url%22%3A%22.%2F%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23f4f1eb%22%2C%22theme_color%22%3A%22%23b87a00%22%2C%22orientation%22%3A%22portrait%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage%2Fsvg%2Bxml%2C%253Csvg+xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'+viewBox%3D'0+0+192+192'%253E%253Crect+width%3D'192'+height%3D'192'+rx%3D'32'+fill%3D'%2523b87a00'%2F%253E%253Ctext+x%3D'50%25'+y%3D'56%25'+font-size%3D'96'+text-anchor%3D'middle'+dominant-baseline%3D'middle'+fill%3D'white'%253E%25E2%2599%25A0%253C%2Ftext%253E%253C%2Fsvg%253E%22%2C%22sizes%22%3A%22192x192%22%2C%22type%22%3A%22image%2Fsvg%2Bxml%22%7D%5D%7D">
+<title>Indian Rummy Score Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Rajdhani:wght@400;500;600;700&family=Fira+Code:wght@400;500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════════════
+   ROOT TOKENS  — light premium day palette
+═══════════════════════════════════════════════════════ */
+:root{
+  /* Backgrounds — warm white/cream */
+  --bg:         #f4f1eb;   /* warm parchment page */
+  --bg2:        #ffffff;   /* pure white cards */
+  --bg3:        #f8f5f0;   /* light cream panels */
+  --bg4:        #ede9e0;   /* slightly deeper cream */
+  --bg5:        #e2ddd3;   /* hover cream */
+  /* Borders */
+  --bdr:  rgba(160,120,60,0.10);
+  --bdr2: rgba(160,120,60,0.22);
+  --bdr3: rgba(160,120,60,0.45);
+  /* Text */
+  --text:  #1e1810;
+  --text2: #7a6040;
+  --text3: #a89070;
+  /* Brand colours — richer on light bg */
+  --gold:   #b87a00;
+  --gold2:  #8a5800;
+  --ivory:  #1e1810;
+  --teal:   #007a68;
+  --teal2:  #005a4e;
+  --green:  #1a7a40;
+  --green2: #0d5028;
+  --red:    #c0283a;
+  --red2:   #8a1020;
+  --amber:  #c07010;
+  --amber2: #8a4c00;
+  --purple: #6030b0;
+  --purple2:#401880;
+  --blue:   #1860b0;
+  /* Sizing */
+  --radius:    14px;
+  --radius-sm:  8px;
+  --radius-xs:  4px;
+}
+
+/* ═══ RESET ═══ */
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{
+  font-family:'Inter',sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  min-height:100vh;
+  overflow-x:hidden;
+}
+
+/* ═══ LAYERED BACKGROUND — light warm parchment ═══ */
+body::before{
+  content:'';position:fixed;inset:0;z-index:0;
+  background:
+    radial-gradient(ellipse 70% 50% at 0% 0%,    rgba(184,122,0,0.07)   0%,transparent 55%),
+    radial-gradient(ellipse 60% 60% at 100% 100%, rgba(96,48,176,0.05)   0%,transparent 55%),
+    radial-gradient(ellipse 80% 40% at 50% 100%,  rgba(0,122,104,0.04)   0%,transparent 60%);
+  pointer-events:none;
+}
+/* Fine linen texture */
+body::after{
+  content:'';position:fixed;inset:0;z-index:0;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4'%3E%3Crect width='4' height='4' fill='none'/%3E%3Ccircle cx='1' cy='1' r='.35' fill='rgba(120,80,20,0.04)'/%3E%3C/svg%3E");
+  pointer-events:none;
+}
+.app{position:relative;z-index:1;}
+
+/* ═══════════════════════════════════════════════════════
+   HEADER
+═══════════════════════════════════════════════════════ */
+.header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:12px 26px;
+  border-bottom:1px solid var(--bdr2);
+  background:rgba(244,241,235,0.97);
+  backdrop-filter:blur(20px);
+  position:sticky;top:0;z-index:100;
+  gap:10px;flex-wrap:wrap;
+}
+.logo{
+  font-family:'Playfair Display',serif;
+  font-size:20px;font-weight:900;
+  letter-spacing:.04em;color:var(--gold);
+  white-space:nowrap;display:flex;align-items:center;gap:10px;
+}
+.logo-suits{
+  font-family:'Rajdhani',sans-serif;
+  font-size:17px;letter-spacing:.12em;
+  background:linear-gradient(135deg,var(--gold),#a05020,var(--gold));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.hpills{display:flex;gap:6px;flex-wrap:wrap;align-items:center;}
+.hpill{
+  font-size:11px;font-family:'Fira Code',monospace;
+  color:var(--text2);background:var(--bg3);
+  border:1px solid var(--bdr2);padding:3px 10px;border-radius:20px;
+}
+.hpill b{color:var(--teal);}
+.hpill.pot-pill{border-color:rgba(240,192,96,.4);color:var(--gold);}
+.hacts{display:flex;gap:7px;}
+
+/* ═══════════════════════════════════════════════════════
+   BUTTONS
+═══════════════════════════════════════════════════════ */
+.btn{
+  font-family:'Rajdhani',sans-serif;font-weight:600;
+  font-size:13px;letter-spacing:.06em;
+  padding:7px 17px;border-radius:var(--radius-sm);
+  border:1px solid var(--bdr2);cursor:pointer;
+  transition:all .16s;background:var(--bg3);color:var(--text);
+}
+.btn:hover{background:var(--bg4);border-color:var(--bdr3);}
+.btn-gold{
+  background:linear-gradient(135deg,#c88a00,#a06800);
+  color:#ffffff;border-color:var(--gold);font-weight:700;
+}
+.btn-gold:hover{background:linear-gradient(135deg,#d89800,#b07800);}
+.btn-teal{background:transparent;border-color:var(--teal);color:var(--teal);}
+.btn-teal:hover{background:rgba(61,232,192,.1);}
+.btn-red{background:transparent;border-color:var(--red);color:var(--red);}
+.btn-red:hover{background:rgba(240,96,112,.1);}
+.btn-purple{background:transparent;border-color:var(--purple);color:var(--purple);}
+.btn-purple:hover{background:rgba(192,144,248,.1);}
+.btn-amber{background:transparent;border-color:var(--amber);color:var(--amber);}
+.btn-amber:hover{background:rgba(240,168,64,.1);}
+.btn-sm{padding:4px 11px;font-size:11px;}
+.btn:disabled{opacity:.3;cursor:not-allowed;}
+
+/* ═══ SCREENS ═══ */
+.screen{display:none;}.screen.active{display:block;}
+
+/* ═══════════════════════════════════════════════════════
+   SETUP SCREEN
+═══════════════════════════════════════════════════════ */
+.setup-wrap{max-width:900px;margin:0 auto;padding:44px 22px;}
+
+.setup-hero{text-align:center;margin-bottom:40px;}
+.setup-title{
+  font-family:'Playfair Display',serif;
+  font-size:42px;font-weight:900;letter-spacing:.02em;
+  background:linear-gradient(135deg,var(--gold) 0%,#a05020 50%,var(--gold2) 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  margin-bottom:8px;line-height:1.1;
+}
+.setup-suits{
+  font-family:'Rajdhani',sans-serif;font-size:28px;
+  letter-spacing:.3em;color:var(--text3);margin-bottom:10px;
+}
+.setup-sub{color:var(--text2);font-size:14px;letter-spacing:.02em;}
+
+/* Cards */
+.scard{
+  background:linear-gradient(160deg,var(--bg2) 0%,var(--bg3) 100%);
+  border:1px solid var(--bdr2);border-radius:var(--radius);
+  padding:24px;margin-bottom:18px;
+  box-shadow:0 4px 20px rgba(120,80,20,.10),inset 0 1px 0 rgba(255,255,255,.9);
+  position:relative;overflow:hidden;
+}
+.scard::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,var(--gold),transparent);
+  opacity:.4;
+}
+.scard-title{
+  font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--gold);
+  margin-bottom:16px;display:flex;align-items:center;gap:8px;
+}
+.scard-title::before{
+  content:'';width:3px;height:13px;
+  background:linear-gradient(180deg,var(--gold),var(--gold2));
+  border-radius:2px;display:inline-block;
+}
+
+/* Preset chips */
+.chip-grid{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px;}
+.pchip{
+  font-family:'Fira Code',monospace;font-size:12px;
+  padding:6px 15px;border-radius:20px;
+  border:1px solid var(--bdr2);cursor:pointer;
+  transition:all .16s;background:var(--bg4);color:var(--text2);
+  user-select:none;
+}
+.pchip:hover{border-color:var(--gold);color:var(--gold);background:rgba(240,192,96,.08);}
+.pchip.active{background:rgba(240,192,96,.16);border-color:var(--gold);color:var(--gold);box-shadow:0 0 0 1px rgba(240,192,96,.3);}
+.pchip.mc{border-color:var(--purple);color:var(--purple);}
+.pchip.mc:hover{background:rgba(192,144,248,.1);}
+
+/* Selected tags */
+.sel-wrap{display:flex;flex-wrap:wrap;gap:5px;min-height:30px;align-items:center;}
+.sel-tag{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:3px 9px 3px 12px;border-radius:20px;
+  font-size:11px;font-family:'Fira Code',monospace;border:1px solid;
+}
+.sel-tag .x{cursor:pointer;opacity:.5;font-size:13px;line-height:1;transition:opacity .1s;}
+.sel-tag .x:hover{opacity:1;}
+
+/* Settings grid */
+.sgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:12px;}
+.field label{
+  display:block;font-size:10px;font-family:'Fira Code',monospace;
+  color:var(--text3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:5px;
+}
+.field input{
+  width:100%;background:var(--bg);border:1px solid var(--bdr2);
+  color:var(--text);padding:9px 12px;border-radius:var(--radius-sm);
+  font-size:13px;font-family:'Fira Code',monospace;outline:none;
+  transition:border-color .15s,box-shadow .15s;
+}
+.field input:focus{border-color:var(--teal);box-shadow:0 0 0 3px rgba(61,232,192,.12);}
+
+.manual-row{display:flex;gap:8px;margin-top:11px;}
+.manual-row input{
+  flex:1;background:var(--bg);border:1px solid var(--bdr2);
+  color:var(--text);padding:9px 12px;border-radius:var(--radius-sm);
+  font-size:13px;font-family:'Fira Code',monospace;outline:none;transition:border-color .15s;
+}
+.manual-row input:focus{border-color:var(--purple);}
+
+.err{color:var(--red);font-size:11px;margin-top:8px;display:none;}
+.err.show{display:block;}
+.setup-foot{display:flex;justify-content:flex-end;margin-top:12px;}
+
+/* ═══════════════════════════════════════════════════════
+   GAME SCREEN
+═══════════════════════════════════════════════════════ */
+.game-wrap{padding:16px 18px;}
+
+/* Stats pills */
+.stats-bar{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:14px;align-items:center;}
+.spill{
+  background:var(--bg2);border:1px solid var(--bdr2);
+  border-radius:20px;padding:4px 13px;
+  font-size:11px;font-family:'Fira Code',monospace;color:var(--text2);
+}
+.spill b{color:var(--ivory);}
+.spill.pot{border-color:rgba(240,192,96,.4);color:var(--gold);}
+.spill.pot b{color:var(--gold);}
+
+/* Game over banner */
+.gob{
+  background:linear-gradient(135deg,rgba(240,192,96,.1),rgba(61,232,192,.06));
+  border:1px solid rgba(240,192,96,.35);
+  border-radius:var(--radius);padding:13px 20px;
+  font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:700;
+  color:var(--gold);letter-spacing:.05em;
+  display:flex;align-items:center;gap:14px;margin-bottom:15px;flex-wrap:wrap;
+  box-shadow:0 4px 24px rgba(240,192,96,.1);
+}
+
+/* Rummy celebration banner */
+.rummy-celebrate{
+  border-radius:var(--radius);padding:11px 18px;
+  margin-bottom:14px;
+  background:linear-gradient(135deg,rgba(26,122,64,.1),rgba(26,122,64,.04));
+  border:1px solid rgba(26,122,64,.35);
+  border-left:4px solid var(--green);
+  display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+  animation:celebFade 4s ease-out forwards;
+}
+@keyframes celebFade{
+  0%{opacity:0;transform:translateY(-6px);}
+  10%{opacity:1;transform:translateY(0);}
+  80%{opacity:1;}
+  100%{opacity:0;}
+}
+.rummy-celebrate-name{
+  font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:700;color:var(--green);
+}
+.rummy-celebrate-msg{
+  font-size:13px;color:var(--text2);font-style:italic;
+}
+.danger-banner{
+  border-radius:var(--radius);padding:14px 18px;
+  margin-bottom:14px;
+  border-left:5px solid var(--red);
+  background:linear-gradient(135deg,rgba(192,40,58,.1),rgba(192,40,58,.03));
+  border-top:1px solid rgba(192,40,58,.25);
+  border-right:1px solid rgba(192,40,58,.2);
+  border-bottom:1px solid rgba(192,40,58,.2);
+  animation:dangerPulse 1.5s ease-in-out infinite;
+  box-shadow:0 2px 16px rgba(192,40,58,.12);
+}
+@keyframes dangerPulse{
+  0%,100%{box-shadow:0 2px 16px rgba(192,40,58,.08);}
+  50%{box-shadow:0 4px 28px rgba(192,40,58,.28),inset 0 0 12px rgba(192,40,58,.06);}
+}
+.danger-banner-title{
+  font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--red);
+  margin-bottom:10px;display:flex;align-items:center;gap:8px;
+}
+.danger-banner-title::before{
+  content:'';width:10px;height:10px;border-radius:50%;
+  background:var(--red);display:inline-block;flex-shrink:0;
+  animation:blink .7s step-start infinite;
+}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:0;}}
+.danger-chips{display:flex;flex-wrap:wrap;gap:10px;}
+.danger-chip{
+  display:flex;flex-direction:column;
+  padding:10px 14px;border-radius:var(--radius-sm);
+  background:rgba(192,40,58,.07);
+  border:1px solid rgba(192,40,58,.28);
+  min-width:160px;
+}
+.danger-chip-abbr{font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:700;}
+.danger-chip-info{font-size:10px;color:var(--text2);font-family:'Fira Code',monospace;}
+
+/* ═══ MAIN SCOREBOARD TABLE ═══ */
+.tbl-section{
+  background:var(--bg2);border:1px solid var(--bdr2);
+  border-radius:var(--radius);overflow:hidden;margin-bottom:18px;
+  box-shadow:0 4px 24px rgba(120,80,20,.10),inset 0 1px 0 rgba(255,255,255,.8);
+}
+.tbl-head{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:13px 18px;border-bottom:1px solid var(--bdr2);
+  flex-wrap:wrap;gap:8px;
+  background:linear-gradient(90deg,rgba(240,192,96,.05),transparent);
+}
+.tbl-title{
+  font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;
+  letter-spacing:.1em;text-transform:uppercase;color:var(--gold);
+  display:flex;align-items:center;gap:8px;
+}
+.tbl-title::before{content:'';width:3px;height:13px;background:linear-gradient(180deg,var(--gold),var(--gold2));border-radius:2px;}
+.legend{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+.leg{display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text3);}
+.leg-dot{width:7px;height:7px;border-radius:50%;}
+
+.tbl-wrap{overflow-x:auto;}
+
+table.mt{width:100%;border-collapse:collapse;font-size:12px;}
+table.mt th{
+  background:var(--bg3);
+  border-bottom:1px solid var(--bdr2);
+  border-right:1px solid var(--bdr);
+  text-align:center;white-space:nowrap;vertical-align:top;padding:0;
+}
+table.mt th:first-child{min-width:82px;text-align:left;}
+table.mt th:last-child{border-right:none;}
+.thi{padding:10px 9px;}
+.th-abbr{font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:700;letter-spacing:.06em;}
+.th-name{font-size:9px;color:var(--text3);margin-top:1px;font-family:'Inter',sans-serif;}
+.th-cum{
+  font-family:'Fira Code',monospace;font-size:12px;font-weight:500;
+  margin-top:5px;display:inline-block;padding:2px 9px;border-radius:5px;
+}
+table.mt td{
+  padding:10px 9px;text-align:center;
+  border-bottom:1px solid var(--bdr);
+  border-right:1px solid var(--bdr);
+  font-family:'Fira Code',monospace;font-size:14px;
+  transition:background .1s;vertical-align:middle;
+}
+table.mt td:first-child{
+  text-align:left;padding-left:15px;font-size:12px;
+  color:var(--text3);border-right:1px solid var(--bdr2);
+  font-family:'Rajdhani',sans-serif;font-weight:600;letter-spacing:.05em;
+}
+table.mt td:last-child{border-right:none;}
+table.mt tr:last-child td{border-bottom:none;}
+table.mt tbody tr:hover td{background:rgba(240,192,96,.03);}
+
+/* Entry (live input) row */
+.entry-row td{
+  background:rgba(240,192,96,.04);
+  border-top:1px solid rgba(240,192,96,.22)!important;
+}
+.entry-row td:first-child{
+  font-family:'Rajdhani',sans-serif;color:var(--gold);
+  font-size:11px;letter-spacing:.07em;padding-top:10px;
+}
+.einp{
+  width:72px;background:var(--bg);border:1px solid var(--bdr2);
+  color:var(--text);padding:5px 6px;border-radius:var(--radius-xs);
+  font-size:12px;font-family:'Fira Code',monospace;
+  outline:none;text-align:center;transition:border-color .15s;
+}
+.einp:focus{border-color:var(--teal);}
+.einp.ierr{border-color:var(--red)!important;}
+
+/* Quick buttons */
+.qrow{display:flex;gap:5px;justify-content:center;margin-top:5px;flex-wrap:wrap;}
+.qb{
+  font-family:'Fira Code',monospace;font-size:11px;font-weight:600;
+  padding:5px 8px;min-width:34px;
+  border-radius:5px;border:1px solid;
+  cursor:pointer;background:transparent;transition:all .12s;letter-spacing:.02em;
+}
+.qb-d{border-color:var(--text3);color:var(--text3);}
+.qb-d:hover{border-color:var(--ivory);color:var(--ivory);background:rgba(120,80,20,.08);}
+.qb-md{border-color:var(--amber);color:var(--amber);}
+.qb-md:hover{background:rgba(192,112,0,.1);}
+.qb-fc{border-color:var(--red);color:var(--red);}
+.qb-fc:hover{background:rgba(192,40,58,.1);}
+.qb-r{border-color:var(--green);color:var(--green);}
+.qb-r:hover{background:rgba(26,122,64,.1);}
+.flbl{font-size:9px;color:var(--purple);height:11px;display:block;text-align:center;margin-top:2px;font-style:italic;}
+
+/* Entry controls bar */
+.econ{
+  display:flex;gap:9px;align-items:center;
+  padding:10px 16px;border-top:1px solid var(--bdr2);
+  flex-wrap:wrap;
+  background:rgba(240,192,96,.02);
+}
+.note{font-size:10px;color:var(--text3);font-style:italic;}
+
+/* Total row */
+.trow td{
+  background:rgba(61,232,192,.05)!important;
+  border-top:1px solid var(--bdr2)!important;font-weight:600;
+}
+.trow td:first-child{
+  font-family:'Rajdhani',sans-serif;font-size:12px;
+  letter-spacing:.07em;color:var(--teal);
+}
+
+/* Reentry row */
+.rrow td{
+  background:rgba(192,144,248,.07);color:var(--purple);
+  font-size:10px;font-style:italic;
+  padding:5px 15px!important;text-align:left!important;
+  border-top:1px solid rgba(192,144,248,.18)!important;
+}
+
+/* Edit button */
+.ebtn{
+  font-size:9px;padding:2px 5px;border-radius:3px;
+  border:1px solid var(--bdr);cursor:pointer;
+  background:transparent;color:var(--text3);
+  transition:all .12s;margin-left:4px;
+}
+.ebtn:hover{border-color:var(--amber);color:var(--amber);background:rgba(240,168,64,.08);}
+
+/* Score state classes */
+.cv0{color:var(--green);font-weight:700;}
+.cv-d{color:var(--text2);}
+.cv-md{color:var(--amber);}
+.cv-fc{color:var(--red);font-weight:600;}
+.cv-dash{color:var(--text3);}
+.sc-safe{color:var(--green);}
+.sc-warn{color:var(--amber);}
+.sc-danger{color:var(--red);}
+.sc-out{color:var(--red2);text-decoration:line-through;opacity:.65;}
+
+/* Badges */
+.obadge{
+  display:inline-block;font-size:8px;
+  background:rgba(240,96,112,.2);color:var(--red);
+  border:1px solid rgba(240,96,112,.35);
+  padding:1px 4px;border-radius:3px;margin-left:3px;vertical-align:middle;
+}
+.rbadge{
+  display:inline-block;font-size:8px;
+  background:rgba(192,144,248,.2);color:var(--purple);
+  border:1px solid rgba(192,144,248,.35);
+  padding:1px 4px;border-radius:3px;margin-left:3px;vertical-align:middle;
+}
+
+/* ═══════════════════════════════════════════════════════
+   TOAST
+═══════════════════════════════════════════════════════ */
+.toast{
+  position:fixed;top:18px;left:50%;transform:translateX(-50%);
+  background:var(--bg4);border:1px solid var(--bdr2);
+  color:var(--text);padding:9px 22px;border-radius:24px;
+  font-size:12px;z-index:9999;opacity:0;transition:opacity .25s;
+  pointer-events:none;white-space:nowrap;
+  box-shadow:0 8px 32px rgba(0,0,0,.6);
+}
+.toast.show{opacity:1;}
+.t-gold{border-color:var(--gold)!important;color:var(--gold)!important;}
+.t-red{border-color:var(--red)!important;color:var(--red)!important;}
+.t-purple{border-color:var(--purple)!important;color:var(--purple)!important;}
+.t-green{border-color:var(--green)!important;color:var(--green)!important;}
+.t-amber{border-color:var(--amber)!important;color:var(--amber)!important;}
+.t-teal{border-color:var(--teal)!important;color:var(--teal)!important;}
+
+/* ═══════════════════════════════════════════════════════
+   MODALS
+═══════════════════════════════════════════════════════ */
+.mov{
+  display:none;position:fixed;inset:0;
+  background:rgba(80,50,10,.5);backdrop-filter:blur(8px);
+  z-index:500;align-items:flex-start;justify-content:center;
+  padding:16px;overflow-y:auto;
+}
+.mov.open{display:flex;}
+.modal{
+  background:linear-gradient(160deg,var(--bg2) 0%,var(--bg3) 100%);
+  border:1px solid var(--bdr2);border-radius:var(--radius);
+  padding:26px;width:100%;max-width:580px;margin:auto;
+  box-shadow:0 12px 48px rgba(120,80,20,.18),inset 0 1px 0 rgba(255,255,255,.95);
+  position:relative;
+}
+.modal::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;border-radius:var(--radius) var(--radius) 0 0;
+  background:linear-gradient(90deg,transparent,var(--gold),transparent);opacity:.5;
+}
+.modal-title{
+  font-family:'Playfair Display',serif;font-size:20px;font-weight:700;
+  color:var(--gold);margin-bottom:4px;letter-spacing:.01em;
+}
+.modal-sub{font-size:11px;color:var(--text2);margin-bottom:18px;line-height:1.55;}
+.mfoot{display:flex;gap:8px;justify-content:flex-end;margin-top:18px;flex-wrap:wrap;}
+
+/* Reentry info box */
+.reinfo{
+  background:rgba(96,48,176,.07);border:1px solid rgba(96,48,176,.25);
+  border-radius:var(--radius-sm);padding:14px;
+  font-size:12px;color:var(--text2);line-height:1.7;
+}
+.reinfo strong{color:var(--purple);}
+.warn-box{
+  margin-top:10px;background:rgba(192,40,58,.07);
+  border:1px solid rgba(192,40,58,.22);
+  border-radius:var(--radius-sm);padding:9px;color:var(--red);font-size:11px;
+}
+
+/* ═══════════════════════════════════════════════════════
+   SETTLE MODAL (wider)
+═══════════════════════════════════════════════════════ */
+.settle-modal{max-width:660px;}
+
+/* Tabs */
+.settle-tabs{
+  display:flex;gap:0;margin-bottom:18px;
+  border:1px solid var(--bdr2);border-radius:var(--radius-sm);overflow:hidden;
+}
+.stab{
+  flex:1;text-align:center;padding:9px 4px;cursor:pointer;
+  font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:600;
+  letter-spacing:.07em;text-transform:uppercase;
+  color:var(--text2);background:transparent;transition:all .15s;border:none;
+}
+.stab:hover{background:var(--bg4);color:var(--text);}
+.stab.active{
+  background:rgba(240,192,96,.14);
+  color:var(--gold);
+  border-bottom:2px solid var(--gold);
+}
+.stab-panel{display:none;}.stab-panel.active{display:block;}
+
+/* Stat boxes */
+.sstats{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin-bottom:16px;}
+.ssbox{
+  background:var(--bg3);border:1px solid var(--bdr2);
+  border-radius:var(--radius-sm);padding:10px 13px;
+}
+.sslabel{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;font-family:'Fira Code',monospace;}
+.ssval{font-size:18px;font-family:'Rajdhani',sans-serif;font-weight:700;color:var(--gold);margin-top:3px;}
+
+/* Settle rows */
+.srow{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 0;border-bottom:1px solid var(--bdr);
+}
+.srow:last-child{border-bottom:none;}
+.srank{font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700;min-width:28px;text-align:center;}
+.savt{
+  width:33px;height:33px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;flex-shrink:0;
+}
+.sname{font-size:13px;font-weight:500;}
+.ssub{font-size:10px;color:var(--text3);font-family:'Fira Code',monospace;margin-top:2px;}
+.snet{font-size:17px;font-family:'Rajdhani',sans-serif;font-weight:700;}
+.sgets{font-size:10px;color:var(--text3);font-family:'Fira Code',monospace;}
+.mp{color:var(--green);}.mn{color:var(--red);}.mz{color:var(--text2);}
+
+/* Expenses */
+.exp-note{font-size:11px;color:var(--text3);margin-bottom:12px;line-height:1.6;}
+.exp-list{margin-bottom:12px;}
+.exp-row{display:flex;gap:7px;align-items:center;margin-bottom:7px;}
+.exp-row select,.exp-row input{
+  background:var(--bg);border:1px solid var(--bdr2);color:var(--text);
+  padding:7px 10px;border-radius:var(--radius-sm);
+  font-size:12px;font-family:'Fira Code',monospace;outline:none;
+  transition:border-color .15s;
+}
+.exp-row select:focus,.exp-row input:focus{border-color:var(--teal);}
+.exp-row select{flex:1;}.exp-row .edsc{flex:1.2;}
+.exp-row .edamt{width:82px!important;}
+.edel{cursor:pointer;color:var(--red);font-size:15px;padding:0 4px;background:none;border:none;opacity:.7;}
+.edel:hover{opacity:1;}
+.exp-totals{
+  margin-top:12px;padding-top:12px;border-top:1px solid var(--bdr2);
+}
+.exp-tot-row{display:flex;justify-content:space-between;font-size:12px;color:var(--text2);margin-bottom:4px;}
+.exp-tot-row b{font-family:'Fira Code',monospace;}
+
+/* Payout explanation */
+.payout-formula{
+  background:rgba(0,122,104,.06);border:1px solid rgba(0,122,104,.18);
+  border-radius:var(--radius-sm);padding:10px 13px;
+  font-size:10px;color:var(--text3);line-height:1.65;margin-bottom:14px;
+}
+.payout-formula b{color:var(--teal);}
+
+/* Who pays whom */
+.pay-intro{font-size:11px;color:var(--text3);margin-bottom:12px;line-height:1.55;}
+.pay-row{
+  display:flex;align-items:center;gap:10px;
+  padding:9px 12px;border-radius:var(--radius-sm);
+  background:var(--bg3);border:1px solid var(--bdr);
+  margin-bottom:6px;
+}
+.pay-row:last-child{margin-bottom:0;}
+.pay-avt{
+  width:30px;height:30px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;flex-shrink:0;
+}
+.pay-name{font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:600;}
+.pay-arrow{font-size:14px;color:var(--text3);}
+.pay-desc{font-size:10px;color:var(--text3);flex:1;padding-left:6px;}
+.pay-amt{font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:700;color:var(--gold);margin-left:auto;}
+
+/* Edit round grid */
+.egrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(162px,1fr));gap:10px;margin-bottom:13px;}
+.ecell{
+  background:var(--bg3);border:1px solid var(--bdr2);
+  border-radius:var(--radius-sm);padding:11px;
+}
+.echd{display:flex;align-items:center;gap:7px;margin-bottom:9px;}
+.eavt{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;}
+
+/* ═══════════════════════════════════════════════════════
+   PLAYER COLOR SYSTEM  (12 rich tones on light bg)
+═══════════════════════════════════════════════════════ */
+.pc0 {background:#ddeeff;color:#1050a0;border-color:#80b0e8;}
+.pc1 {background:#d0f5ee;color:#006048;border-color:#60c0a8;}
+.pc2 {background:#fff0cc;color:#7a5000;border-color:#d0a030;}
+.pc3 {background:#edddf8;color:#501890;border-color:#a070d0;}
+.pc4 {background:#fddde0;color:#901020;border-color:#e06070;}
+.pc5 {background:#ffe8cc;color:#804000;border-color:#d08030;}
+.pc6 {background:#d8f5e4;color:#0a5828;border-color:#50b878;}
+.pc7 {background:#fde8f5;color:#802060;border-color:#d070b0;}
+.pc8 {background:#d8eeff;color:#104880;border-color:#6098d0;}
+.pc9 {background:#eeffd8;color:#386000;border-color:#88c840;}
+.pc10{background:#fff3d8;color:#6a4400;border-color:#c89030;}
+.pc11{background:#d8f5ff;color:#0a5070;border-color:#40a8c8;}
+
+.pct0 {color:#1050a0;}.pct1 {color:#006048;}.pct2 {color:#7a5000;}.pct3 {color:#501890;}
+.pct4 {color:#901020;}.pct5 {color:#804000;}.pct6 {color:#0a5828;}.pct7 {color:#802060;}
+.pct8 {color:#104880;}.pct9 {color:#386000;}.pct10{color:#6a4400;}.pct11{color:#0a5070;}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:6px;height:6px;}
+::-webkit-scrollbar-track{background:var(--bg3);}
+::-webkit-scrollbar-thumb{background:var(--bg5);border-radius:3px;}
+::-webkit-scrollbar-thumb:hover{background:var(--bdr3);}
+</style>
+</head>
+<body>
+<div class="app">
+<div id="toast" class="toast"></div>
+
+<!-- ═══════════ HEADER ═══════════ -->
+<div class="header">
+  <div class="logo">
+    <span class="logo-suits">♠ ♥ ♦ ♣</span>
+    <span>Rummy</span>
+  </div>
+  <div class="hpills" id="hpills"></div>
+  <div class="hacts" id="hacts"></div>
+</div>
+
+<!-- ═══════════ SETUP ═══════════ -->
+<div id="scr-setup" class="screen active">
+  <div class="setup-wrap">
+    <div class="setup-hero">
+      <div class="setup-suits">♠ ♥ ♦ ♣</div>
+      <div class="setup-title">Indian Rummy</div>
+      <div class="setup-sub">Score Tracker &amp; Settlement Calculator</div>
+    </div>
+
+    <div class="scard">
+      <div class="scard-title">Select Players &nbsp;(2 – 12)</div>
+      <div class="chip-grid" id="preset-chips"></div>
+      <div id="manual-row" style="display:none">
+        <div class="manual-row">
+          <input id="manual-inp" placeholder="Full name, e.g. Raj Kumar">
+          <button class="btn btn-purple btn-sm" onclick="addManual()">+ Add</button>
+        </div>
+      </div>
+      <div style="margin-top:14px">
+        <div class="scard-title" style="margin-bottom:9px">Selected Players</div>
+        <div class="sel-wrap" id="sel-display">
+          <span style="font-size:12px;color:var(--text3)">None selected</span>
+        </div>
+      </div>
+      <div class="err" id="err-players">Select between 2 and 12 players</div>
+    </div>
+
+    <div class="scard">
+      <div class="scard-title">Game Settings</div>
+      <div class="sgrid">
+        <div class="field"><label>Cash / Player ($)</label><input type="number" id="cfg-cash"  value="25"  min="1"></div>
+        <div class="field"><label>Drop Score (D)</label>  <input type="number" id="cfg-drop"  value="25"  min="1"></div>
+        <div class="field"><label>Middle Drop (MD)</label><input type="number" id="cfg-mid"   value="50"  min="1"></div>
+        <div class="field"><label>Full Count / Max</label><input type="number" id="cfg-full"  value="80"  min="1"></div>
+        <div class="field"><label>Out Limit (≥)</label>   <input type="number" id="cfg-final" value="201" min="1"></div>
+      </div>
+      <div style="margin-top:10px;padding:9px 12px;background:rgba(61,232,192,.05);border:1px solid rgba(61,232,192,.15);border-radius:var(--radius-sm);font-size:11px;color:var(--text3);line-height:1.65;">
+        ⓘ A player is eliminated when cumulative score <b style="color:var(--text2)">≥ out limit</b>.
+        Score of 200 with limit 201 means they keep playing.
+        Re-entry costs $cash and adds to the pot.
+        Settlement distributes by <b style="color:var(--text2)">drops remaining</b> in $cash increments.
+      </div>
+      <div class="err" id="err-cfg">All values must be positive numbers</div>
+    </div>
+
+    <div class="setup-foot">
+      <button class="btn btn-gold" onclick="startGame()"
+        style="font-size:15px;padding:11px 30px;letter-spacing:.08em;">
+        DEAL THE CARDS ♠
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ GAME ═══════════ -->
+<div id="scr-game" class="screen">
+  <div class="game-wrap">
+    <div class="stats-bar" id="stats-bar"></div>
+    <div id="gob" style="display:none"></div>
+    <div id="rummy-celebrate" style="display:none"></div>
+    <div id="danger-banner" style="display:none"></div>
+
+    <div class="tbl-section">
+      <div class="tbl-head">
+        <div class="tbl-title">Live Scoreboard</div>
+        <div class="legend">
+          <div class="leg"><div class="leg-dot" style="background:var(--green)"></div>Rummy (0)</div>
+          <div class="leg"><div class="leg-dot" style="background:var(--text3)"></div>Drop</div>
+          <div class="leg"><div class="leg-dot" style="background:var(--amber)"></div>Mid drop</div>
+          <div class="leg"><div class="leg-dot" style="background:var(--red)"></div>Full / danger</div>
+          <div class="leg"><div class="leg-dot" style="background:var(--purple)"></div>Re-entry</div>
+        </div>
+      </div>
+      <div class="tbl-wrap"><table class="mt" id="main-tbl"></table></div>
+      <div class="econ" id="econ">
+        <button class="btn btn-gold" onclick="submitRound()" id="btn-submit">Submit Round</button>
+        <button class="btn btn-teal btn-sm" onclick="openSettle()">Settle Now</button>
+        <span class="note" id="enote"></span>
+        <div class="err" id="err-round" style="margin-top:0;flex-basis:100%;"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ RE-ENTRY MODAL ═══════════ -->
+<div class="mov" id="mod-reentry">
+  <div class="modal">
+    <div class="modal-title">Re-Entry Decision</div>
+    <div class="modal-sub" id="re-sub"></div>
+    <div id="re-body"></div>
+    <div class="mfoot">
+      <button class="btn btn-red" id="btn-decline" onclick="declineReentry()">Decline — Player Out</button>
+      <button class="btn btn-purple" onclick="acceptReentry()" id="btn-accept">Accept Re-entry</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ EDIT ROUND MODAL ═══════════ -->
+<div class="mov" id="mod-edit">
+  <div class="modal">
+    <div class="modal-title">Edit Round</div>
+    <div class="modal-sub" id="edit-sub"></div>
+    <div class="egrid" id="edit-grid"></div>
+    <div class="err" id="err-edit"></div>
+    <div class="mfoot">
+      <button class="btn"        onclick="closeEdit()">Cancel</button>
+      <button class="btn btn-amber" onclick="saveEdit()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ SETTLE MODAL ═══════════ -->
+<div class="mov" id="mod-settle">
+  <div class="modal settle-modal">
+    <div class="modal-title">Session Settlement</div>
+    <div class="modal-sub" id="settle-sub"></div>
+
+    <div class="settle-tabs">
+      <button class="stab active" onclick="switchTab('tab-summary')">Summary</button>
+      <button class="stab" onclick="switchTab('tab-expenses')">Expenses</button>
+      <button class="stab" onclick="switchTab('tab-payout')">Payout</button>
+      <button class="stab" onclick="switchTab('tab-whopays')">Who Pays Whom</button>
+    </div>
+
+    <!-- TAB: Summary -->
+    <div class="stab-panel active" id="tab-summary">
+      <div class="sstats" id="settle-stats"></div>
+      <div id="settle-rankings"></div>
+    </div>
+
+    <!-- TAB: Expenses -->
+    <div class="stab-panel" id="tab-expenses">
+      <div class="exp-note">
+        Add shared costs paid by any player (food, drinks, venue…).
+        These are reimbursed first from the pot before drop-based distribution.
+      </div>
+      <div class="exp-list" id="exp-list"></div>
+      <button class="btn btn-teal btn-sm" onclick="addExpenseRow()">+ Add Expense</button>
+      <div class="exp-totals">
+        <div class="exp-tot-row"><span>Total expenses:</span><b id="exp-total">$0.00</b></div>
+        <div class="exp-tot-row"><span>Remaining pot after expenses:</span><b id="exp-rem" style="color:var(--teal)">$0.00</b></div>
+      </div>
+    </div>
+
+    <!-- TAB: Payout -->
+    <div class="stab-panel" id="tab-payout">
+      <div id="payout-body"></div>
+    </div>
+
+    <!-- TAB: Who Pays Whom -->
+    <div class="stab-panel" id="tab-whopays">
+      <div class="pay-intro">
+        Minimum transactions to settle all balances.
+        Every active player is guaranteed at least the cash increment ($<span id="inc-display">25</span>).
+      </div>
+      <div id="pay-list"></div>
+    </div>
+
+    <div class="mfoot">
+      <button class="btn"            onclick="closeSettle()">Back to Game</button>
+      <button class="btn btn-teal btn-sm" onclick="recalcSettle()">↻ Recalculate</button>
+      <button class="btn btn-red"    onclick="endGame()">End &amp; New Session</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ JAVASCRIPT ═══════════ -->
+<script>
+/* ─── CONSTANTS ─────────────────────────────────────── */
+const PRESET=['PP','KR','K1','K2','SG','CP','PV','MM','RM','RR'];
+const FUNNY={
+  D:  ['Padi poindi! 😅','Safe ga drop!','Smart move anna!','Baaga alochinchadu!','Chala wise!'],
+  MD: ['Aiyo! Mid drop! 😬','Chesindi chuskundi!','Ardham damage anna!','Ouch! Half pot gone!','Middle lo chesindi!'],
+  FC: ['Nakko! Full Count! 💀','Ekkuva aindi! Brutal!','Ante full damage ra!','Somperi! Full count!','Pakka begging now!'],
+  R:  ['RUMMY! Legend ra! 👑','ZERO HERO! Maatalaadake!','Untouchable anna! 🔥','Baaga chesthunnadu!','Nenu champion ra! 💪','Nakku sariga cheppadu!']
+};
+// Round-winner reactions (Telugu/Andhra flavour)
+const RUMMY_REACTIONS=[
+  '🏆 Seena! Who is the boss?','👑 Rummy master anna!','🔥 Pakka pro move!',
+  '💪 Maatalaadake chesadu!','⭐ Legend play ra!','🎯 Precise ga chesadu!'
+];
+
+/* ─── STATE ─────────────────────────────────────────── */
+let G={};
+let selPlayers=[];
+let pendingReentry=null;
+let reentryQueue=[];
+let editingRoundIdx=null;
+let expenses=[];
+
+/* ─── SETUP ─────────────────────────────────────────── */
+function initSetup(){
+  const w=document.getElementById('preset-chips');
+  w.innerHTML='';
+  PRESET.forEach(n=>{
+    const d=document.createElement('div');
+    d.className='pchip';d.textContent=n;d.dataset.name=n;
+    d.onclick=()=>togglePreset(d,n);
+    w.appendChild(d);
+  });
+  const m=document.createElement('div');
+  m.className='pchip mc';m.textContent='+ Manual Entry';
+  m.onclick=()=>{
+    const r=document.getElementById('manual-row');
+    r.style.display=r.style.display==='none'?'block':'none';
+  };
+  w.appendChild(m);
+}
+
+function togglePreset(el,name){
+  const i=selPlayers.findIndex(p=>p.name===name);
+  if(i>=0){selPlayers.splice(i,1);el.classList.remove('active');}
+  else{
+    if(selPlayers.length>=12){toast('Max 12 players','red');return;}
+    selPlayers.push({name,abbr:name.slice(0,2).toUpperCase()});
+    el.classList.add('active');
+  }
+  renderSel();
+}
+
+function addManual(){
+  const inp=document.getElementById('manual-inp');
+  const raw=inp.value.trim();
+  if(!raw){toast('Enter a name','red');return;}
+  if(selPlayers.length>=12){toast('Max 12 players','red');return;}
+  if(selPlayers.find(p=>p.name===raw)){toast('Already added','red');return;}
+  const pts=raw.split(/\s+/);
+  const ab=pts.length>=2?(pts[0][0]+pts[1][0]).toUpperCase():raw.slice(0,2).toUpperCase();
+  selPlayers.push({name:raw,abbr:ab});
+  inp.value='';renderSel();
+  toast(`Added ${ab} — ${raw}`,'teal');
+}
+
+function renderSel(){
+  const el=document.getElementById('sel-display');
+  if(!selPlayers.length){
+    el.innerHTML='<span style="font-size:12px;color:var(--text3)">None selected</span>';return;
+  }
+  el.innerHTML=selPlayers.map((p,i)=>`
+    <div class="sel-tag pc${i%12}">
+      <span class="pct${i%12}" style="font-weight:700">${p.abbr}</span>
+      ${p.name!==p.abbr?`<span style="opacity:.6">${p.name}</span>`:''}
+      <span class="x" onclick="removeSel(${i})">×</span>
+    </div>`).join('');
+}
+
+function removeSel(i){
+  const name=selPlayers[i].name;
+  selPlayers.splice(i,1);
+  document.querySelectorAll('.pchip').forEach(c=>{
+    if(c.dataset.name===name)c.classList.remove('active');
+  });
+  renderSel();
+}
+
+function startGame(){
+  hideErr('err-players');hideErr('err-cfg');
+  if(selPlayers.length<2||selPlayers.length>12){
+    showErr('err-players','Select between 2 and 12 players');return;
+  }
+  const cash =+document.getElementById('cfg-cash').value;
+  const drop =+document.getElementById('cfg-drop').value;
+  const mid  =+document.getElementById('cfg-mid').value;
+  const full =+document.getElementById('cfg-full').value;
+  const fin  =+document.getElementById('cfg-final').value;
+  if([cash,drop,mid,full,fin].some(v=>!v||v<=0)){
+    showErr('err-cfg','All values must be positive numbers');return;
+  }
+  G={
+    players:selPlayers.map((p,i)=>({...p,ci:i%12})),
+    cfg:{cash,drop,mid,full,final:fin},
+    rounds:[],
+    eliminated:{},
+    reentry:{},       // abbr -> true  (used their one reentry)
+    reentryScore:{},  // abbr -> score at reentry
+    reentryCount:{},  // abbr -> # of reentries (each +$cash to pot)
+    gameOver:false
+  };
+  expenses=[];
+  switchScreen('scr-game');
+  renderHeaderGame();
+  renderAll();
+}
+
+/* ─── HELPERS ───────────────────────────────────────── */
+function switchScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function getActive(){return G.players.filter(p=>!G.eliminated[p.abbr]);}
+
+function getCum(abbr){
+  let s=0;
+  for(const r of G.rounds){
+    if(r.reentryFor===abbr){s=G.reentryScore[abbr]||0;continue;}
+    if(r.scores&&r.scores[abbr]!==undefined)s+=r.scores[abbr];
+  }
+  return s;
+}
+
+function getTotalPot(){
+  const base=G.players.length*G.cfg.cash;
+  const re=Object.values(G.reentryCount||{}).reduce((s,v)=>s+v,0);
+  return base+re*G.cfg.cash;
+}
+
+function getRoundNum(ri){
+  let n=0;
+  for(let i=0;i<=ri;i++){if(!G.rounds[i].reentryFor)n++;}
+  return n;
+}
+
+function cellClass(v,cfg){
+  if(v===0)return'cv0';
+  if(v===cfg.drop)return'cv-d';
+  if(v===cfg.mid)return'cv-md';
+  if(v>=cfg.full)return'cv-fc';
+  return'';
+}
+
+function cumClass(cum,cfg,isOut){
+  if(isOut)return'sc-out';
+  const rem=cfg.final-1-cum;
+  if(rem<=cfg.drop)return'sc-danger';
+  if(rem<=cfg.drop*2)return'sc-warn';
+  return'sc-safe';
+}
+
+/* ─── HEADER ────────────────────────────────────────── */
+function renderHeaderGame(){
+  const pot=getTotalPot();
+  document.getElementById('hpills').innerHTML=
+    G.players.map(p=>`<div class="hpill">${p.abbr}</div>`).join('')+
+    `<div class="hpill pot">Pot: <b>$${pot}</b></div>`;
+  document.getElementById('hacts').innerHTML=`
+    <button class="btn btn-teal btn-sm" onclick="openSettle()">Settle</button>
+    <button class="btn btn-red  btn-sm" onclick="endGame()">New Game</button>`;
+}
+
+/* ─── STATS BAR ─────────────────────────────────────── */
+function renderStatsBar(){
+  const n=G.rounds.filter(r=>!r.reentryFor).length;
+  const pot=getTotalPot();
+  document.getElementById('stats-bar').innerHTML=`
+    <div class="spill">D:<b>${G.cfg.drop}</b></div>
+    <div class="spill">MD:<b>${G.cfg.mid}</b></div>
+    <div class="spill">FC/Max:<b>${G.cfg.full}</b></div>
+    <div class="spill">Out:&nbsp;<b>≥${G.cfg.final}</b></div>
+    <div class="spill">Round:<b>${n+1}</b></div>
+    <div class="spill pot">Pot:<b>$${pot}</b></div>`;
+}
+
+/* ─── TABLE ─────────────────────────────────────────── */
+function renderAll(){renderStatsBar();renderTable();renderHeaderGame();renderDangerBanner();}
+
+function renderTable(){
+  const tbl=document.getElementById('main-tbl');
+  const{players,cfg}=G;
+  const active=getActive();
+  const isOver=G.gameOver||active.length<2;
+
+  /* THEAD */
+  let h='<thead><tr><th><div class="thi" style="color:var(--text3);font-size:10px;font-family:\'Fira Code\',monospace">ROUND</div></th>';
+  // Pre-compute whether reinstate is currently eligible (all active have >= 1 drop)
+  const allActiveHaveDrop=getActive().every(q=>(cfg.final-1-getCum(q.abbr))>=cfg.drop);
+
+  players.forEach(p=>{
+    const cum=getCum(p.abbr);
+    const isOut=!!G.eliminated[p.abbr];
+    const hasRE=!!G.reentry[p.abbr];
+    const isDeclined=!!(G.declinedReentry&&G.declinedReentry[p.abbr]);
+    // Show Reinstate only if: player was declined AND all active players have ≥ 1 drop
+    const showReinstate=isDeclined&&allActiveHaveDrop;
+    const cc=cumClass(cum,cfg,isOut);
+    const rem=cfg.final-1-cum;
+    const dropsLeft=Math.max(0,Math.floor(rem/cfg.drop));
+    const dropBarWidth=isOut?0:Math.min(100,Math.round((rem/(cfg.final-1))*100));
+    const dropBarColor=dropsLeft===0?'var(--red)':dropsLeft<=2?'var(--amber)':'var(--green)';
+    h+=`<th><div class="thi">
+      <div class="th-abbr pct${p.ci}">${p.abbr}
+        ${isOut?`<span class="obadge">OUT</span>`:''}
+        ${hasRE&&!isOut?`<span class="rbadge">RE</span>`:''}
+      </div>
+      <div class="th-name">${p.name!==p.abbr?p.name:''}</div>
+      <div class="th-cum ${cc}">${cum}</div>
+      ${!isOut?`
+        <div style="margin-top:5px;padding:0 4px">
+          <div style="height:4px;background:var(--bdr2);border-radius:2px;overflow:hidden">
+            <div style="height:100%;width:${dropBarWidth}%;background:${dropBarColor};border-radius:2px;transition:width .4s"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-top:3px;font-size:9px;color:var(--text3)">
+            <span>${rem} pts</span><span>${dropsLeft}D</span>
+          </div>
+        </div>`
+      :`${showReinstate?`<div style="margin-top:4px"><button class="btn btn-purple btn-sm" style="font-size:9px;padding:2px 7px" onclick="reinstatePlayer('${p.abbr}')">↩ Reinstate</button></div>`:''}`}
+    </div></th>`;
+  });
+  h+='</tr></thead><tbody>';
+
+  /* DATA ROWS */
+  let rNum=0;
+  G.rounds.forEach((r,ri)=>{
+    if(r.reentryFor){
+      h+=`<tr class="rrow"><td colspan="${players.length+1}">
+        ↩ Re-entry: ${r.reentryFor} rejoins — score reset to ${G.reentryScore[r.reentryFor]} · Pot +$${G.cfg.cash}
+      </td></tr>`;
+      return;
+    }
+    rNum++;
+    h+=`<tr><td style="white-space:nowrap">R${rNum}
+      <button class="ebtn" onclick="openEdit(${ri})" title="Edit round ${rNum}">✎</button>
+    </td>`;
+    players.forEach(p=>{
+      const v=r.scores&&r.scores[p.abbr]!==undefined?r.scores[p.abbr]:null;
+      if(v===null){h+=`<td class="cv-dash">—</td>`;return;}
+      h+=`<td class="${cellClass(v,cfg)}">${v}</td>`;
+    });
+    h+='</tr>';
+  });
+
+  /* TOTAL ROW */
+  h+='<tr class="trow"><td style="font-family:\'Rajdhani\',sans-serif;font-size:13px;letter-spacing:.07em;color:var(--teal)">TOTAL</td>';
+  players.forEach(p=>{
+    const cum=getCum(p.abbr);
+    const isOut=!!G.eliminated[p.abbr];
+    const cc=cumClass(cum,cfg,isOut);
+    const rem=cfg.final-1-cum;
+    const dropsLeft=Math.max(0,Math.floor(rem/cfg.drop));
+    // Max possible drops at start = floor((final-1)/drop)
+    const maxDrops=Math.floor((cfg.final-1)/cfg.drop);
+    const dropRatio=isOut?0:Math.min(1,dropsLeft/Math.max(1,maxDrops));
+    // Smooth gradient: green(1.0) → yellow-green(.75) → yellow(.5) → orange(.25) → red(0)
+    const barColor=isOut?'var(--red2)':dropRatio===0?'#c0283a':
+      dropRatio<=0.25?`hsl(${Math.round(dropRatio*4*30)},80%,38%)`:   // red→orange
+      dropRatio<=0.5 ?`hsl(${Math.round(30+dropRatio*4*20)},75%,38%)`:// orange→yellow
+      dropRatio<=0.75?`hsl(${Math.round(70+dropRatio*4*20)},70%,35%)`:// yellow→yellow-green
+                      `hsl(${Math.round(130+dropRatio*20)},60%,33%)`; // yellow-green→green
+    const barWidth=isOut?100:Math.min(100,Math.round(dropRatio*100));
+    const dc=dropsLeft===0?'sc-danger':dropsLeft<=2?'sc-warn':'sc-safe';
+    h+=`<td>
+      <div class="${cc}" style="font-size:15px;font-weight:700;font-family:'Rajdhani',sans-serif;letter-spacing:.03em">${cum}</div>
+      ${!isOut
+        ?`<div style="margin-top:4px;padding:0 2px">
+            <div style="height:5px;background:var(--bdr2);border-radius:3px;overflow:hidden">
+              <div style="height:100%;width:${barWidth}%;background:${barColor};border-radius:3px;transition:width .4s,background .4s"></div>
+            </div>
+            <div style="font-size:10px;margin-top:3px" class="${dc}">
+              ${dropsLeft===0?'🔴 ':dropsLeft<=2?'🟡 ':'🟢 '}${dropsLeft}D · ${rem}pts
+            </div>
+          </div>`
+        :`<div style="font-size:10px;color:var(--red2);margin-top:2px">✗ OUT</div>`}
+    </td>`;
+  });
+  h+='</tr>';
+
+  /* ENTRY ROW */
+  if(!isOver){
+    h+=`<tr class="entry-row"><td>NEW</td>`;
+    players.forEach(p=>{
+      if(G.eliminated[p.abbr]){
+        h+=`<td style="color:var(--text3);font-size:10px">out</td>`;return;
+      }
+      h+=`<td>
+        <input class="einp" id="inp-${p.abbr}" type="number" min="0" max="${cfg.full}" placeholder="0–${cfg.full}"
+          oninput="onScoreInput('${p.abbr}',this)">
+        <div class="qrow">
+          <button class="qb qb-d"  onclick="setQ('${p.abbr}','D')"  title="Drop (${cfg.drop})">D</button>
+          <button class="qb qb-md" onclick="setQ('${p.abbr}','MD')" title="Mid drop (${cfg.mid})">MD</button>
+          <button class="qb qb-fc" onclick="setQ('${p.abbr}','FC')" title="Full count (${cfg.full})">FC</button>
+          <button class="qb qb-r"  id="rbtn-${p.abbr}" onclick="setQ('${p.abbr}','R')"  title="Rummy (0)">R</button>
+        </div>
+        <span class="flbl" id="fl-${p.abbr}"></span>
+      </td>`;
+    });
+    h+='</tr>';
+  }
+  h+='</tbody>';
+  tbl.innerHTML=h;
+
+  // After rendering, highlight R status indicator only (no disabling)
+  if(!isOver) setTimeout(()=>updateRummyIndicator(),0);
+
+  /* Controls */
+  const enote=document.getElementById('enote');
+  const bsub=document.getElementById('btn-submit');
+  if(isOver){
+    bsub.style.display='none';
+    enote.textContent='Game over — click Settle to distribute the pot.';
+    const gob=document.getElementById('gob');
+    gob.style.display='flex';gob.className='gob';
+    const winner=active.length===1?active[0]:null;
+    gob.innerHTML=`♛ ${winner?`<span class="pct${winner.ci}">${winner.abbr}</span> wins the session!`
+                              :'Session concluded!'}
+      &nbsp;<button class="btn btn-gold btn-sm" onclick="openSettle()">Settle &amp; Pay Out</button>`;
+  } else {
+    bsub.style.display='';
+    enote.innerHTML=`Max: ${cfg.full}. <b style="color:var(--amber)">⚠ Select one Rummy (R) before submitting.</b>`;
+  }
+}
+
+/* ─── QUICK ENTRY ───────────────────────────────────── */
+function setQ(abbr,type){
+  const inp=document.getElementById('inp-'+abbr);if(!inp)return;
+  inp.value={D:G.cfg.drop,MD:G.cfg.mid,FC:G.cfg.full,R:0}[type];
+  inp.classList.remove('ierr');
+  const fl=document.getElementById('fl-'+abbr);
+  if(fl){
+    fl.textContent=FUNNY[type][Math.floor(Math.random()*FUNNY[type].length)];
+    setTimeout(()=>{fl.textContent='';},2800);
+  }
+  updateRummyIndicator();
+}
+
+function onScoreInput(abbr,inp){
+  inp.classList.remove('ierr');
+  hideErr('err-round');
+  updateRummyIndicator();
+}
+
+/* Visual indicator only — never disables buttons.
+   Green R = this player has Rummy selected.
+   Faded R = another player already has it (but still clickable — user can change mind).
+   Gold pulsing border on all R's = no Rummy selected yet (required). */
+function updateRummyIndicator(){
+  const active=getActive();
+  let rummyAbbr=null;
+  active.forEach(p=>{
+    const inp=document.getElementById('inp-'+p.abbr);
+    if(inp&&inp.value==='0')rummyAbbr=p.abbr;
+  });
+
+  active.forEach(p=>{
+    const rBtn=document.getElementById('rbtn-'+p.abbr);
+    if(!rBtn)return;
+    rBtn.disabled=false;rBtn.style.opacity='1';
+
+    if(rummyAbbr===null){
+      // No R selected yet — pulse all R buttons gold to signal required
+      rBtn.style.background='rgba(192,112,16,.12)';
+      rBtn.style.color='var(--amber)';
+      rBtn.style.borderColor='var(--amber)';
+      rBtn.style.fontWeight='700';
+      rBtn.title='Rummy required — select one player';
+    } else if(p.abbr===rummyAbbr){
+      // This player has Rummy — highlight green
+      rBtn.style.background='var(--green)';
+      rBtn.style.color='#fff';
+      rBtn.style.borderColor='var(--green)';
+      rBtn.style.fontWeight='700';
+      rBtn.title='Rummy selected ✓ — click another player to reassign';
+    } else {
+      // Another player has Rummy — fade this one but keep clickable
+      rBtn.style.background='';
+      rBtn.style.color='var(--text3)';
+      rBtn.style.borderColor='var(--text3)';
+      rBtn.style.fontWeight='';
+      rBtn.title='Click to reassign Rummy to '+p.abbr;
+    }
+  });
+
+  // Update the rummy status line in the footer note
+  const enote=document.getElementById('enote');
+  if(enote&&!G.gameOver){
+    if(rummyAbbr){
+      enote.innerHTML=`Max: ${G.cfg.full}. Rummy → <b style="color:var(--green)">${rummyAbbr}</b>. Submit when ready.`;
+    } else {
+      enote.innerHTML=`Max: ${G.cfg.full}. <b style="color:var(--amber)">⚠ Select one Rummy (R) before submitting.</b>`;
+    }
+  }
+}
+
+/* ─── SUBMIT ROUND ──────────────────────────────────── */
+function submitRound(){
+  hideErr('err-round');
+  const active=getActive();
+  if(active.length<2)return;
+  const cfg=G.cfg;
+  const scores={};
+  let hasErr=false,zeroCount=0,errMsg='';
+
+  for(const p of active){
+    const inp=document.getElementById('inp-'+p.abbr);
+    const raw=inp?inp.value.trim():'';
+    const val=Number(raw);
+    if(raw===''||isNaN(val)||val<0){
+      if(inp)inp.classList.add('ierr');
+      errMsg='Score required for all active players.';hasErr=true;
+    } else if(val===1){
+      if(inp)inp.classList.add('ierr');
+      errMsg='Score of 1 is not valid. Minimum score is 0 (Rummy) or 2+.';hasErr=true;
+    } else if(val>cfg.full){
+      if(inp)inp.classList.add('ierr');
+      errMsg=`Max score is ${cfg.full}. ${p.abbr} entered ${val}.`;hasErr=true;
+    } else {
+      if(inp)inp.classList.remove('ierr');
+      scores[p.abbr]=Math.round(val);
+      if(val===0)zeroCount++;
+    }
+  }
+  if(hasErr){showErr('err-round',errMsg);return;}
+  if(zeroCount===0){showErr('err-round','Every round must have exactly one Rummy (R=0). No Rummy selected!');return;}
+  if(zeroCount>1){showErr('err-round','Only one player can score 0 (Rummy) per round!');return;}
+
+  // Clear reinstate eligibility — once a new round is committed, no more reinstate
+  G.declinedReentry={};
+  G.rounds.push({scores,reentryFor:null});
+
+  /* Check who crossed the out limit */
+  const crossed=[];
+  for(const p of active){
+    const cum=getCum(p.abbr);
+    if(cum>=cfg.final){
+      if(!G.reentry[p.abbr])crossed.push(p);
+      else{G.eliminated[p.abbr]=true;toast(`${p.abbr} is OUT! 💀`,'red');}
+    }
+  }
+  if(crossed.length>0){reentryQueue=[...crossed];processReentry(0);return;}
+  afterRound();
+}
+
+/* ─── RE-ENTRY CHAIN ────────────────────────────────── */
+function processReentry(idx){
+  if(idx>=reentryQueue.length){afterRound();return;}
+  const player=reentryQueue[idx];
+  const cum=getCum(player.abbr);
+  const cfg=G.cfg;
+
+  /* Rule: ALL other remaining active players must have ≥ 1 drop of room */
+  const others=getActive().filter(q=>q.abbr!==player.abbr&&!G.eliminated[q.abbr]);
+  const canReenter=others.length>0&&others.every(q=>(cfg.final-1-getCum(q.abbr))>=cfg.drop);
+  const blockers=others.filter(q=>(cfg.final-1-getCum(q.abbr))<cfg.drop);
+  const maxScore=others.length>0?Math.max(...others.map(q=>getCum(q.abbr))):cum;
+
+  pendingReentry={player,cum,reentryAt:maxScore,idx,canReenter,blockers};
+
+  const btn=document.getElementById('btn-accept');
+  const btnDecline=document.getElementById('btn-decline');
+  document.getElementById('re-sub').textContent=
+    `${player.name} (${player.abbr}) reached ${cum} — out limit is ≥${cfg.final}`;
+
+  let html=`<div class="reinfo">
+    <strong>${player.abbr}</strong> crossed the out limit with score <strong>${cum}</strong>.<br><br>`;
+  if(canReenter){
+    html+=`Eligible for <strong>one re-entry</strong>.
+      Score will reset to <strong>${maxScore}</strong> (highest among remaining players).<br><br>
+      ⓘ Re-entry adds <strong>$${cfg.cash}</strong> to the pot
+      (new pot: $${getTotalPot()+cfg.cash}).<br><br>
+      All other players have ≥ ${cfg.drop} pts of room —
+      <strong style="color:var(--green)">re-entry permitted</strong>.`;
+    btn.disabled=false;btn.style.opacity='1';
+    // When reinstate IS possible after decline, label the button accordingly
+    btnDecline.textContent='Decline — Player Out (can reinstate later)';
+  } else {
+    // Identify whether blockers have zero drops (no drops left) or just insufficient room
+    const zeroDropBlockers=blockers.filter(q=>Math.floor((cfg.final-1-getCum(q.abbr))/cfg.drop)===0);
+    const noReinstateReason=zeroDropBlockers.length>0
+      ? `Since player${zeroDropBlockers.length>1?'s':''} ${zeroDropBlockers.map(q=>q.abbr).join(', ')} ${zeroDropBlockers.length>1?'have':'has'} no drops left, there is no reinstate option available.`
+      : `At least one other player has less than a full drop (${cfg.drop} pts) of room — reinstate will not be available.`;
+    html+=`<strong>Re-entry not permitted.</strong><br><br>
+      ⚠ <em>${noReinstateReason}</em>`;
+    if(blockers.length){
+      html+=`<div class="warn-box">
+        No drops left: ${zeroDropBlockers.length?zeroDropBlockers.map(q=>`${q.abbr} (${cfg.final-1-getCum(q.abbr)} pts left, 0 drops)`).join(', '):'—'}<br>
+        ${blockers.length>zeroDropBlockers.length?`Insufficient room: ${blockers.filter(q=>Math.floor((cfg.final-1-getCum(q.abbr))/cfg.drop)>0).map(q=>`${q.abbr} (${cfg.final-1-getCum(q.abbr)} pts left)`).join(', ')}`:''} 
+      </div>`;
+    }
+    btn.disabled=true;btn.style.opacity='0.32';
+    // No reinstate possible — make decline button clear and final
+    btnDecline.textContent='Confirm Out — No Reinstate Available';
+  }
+  html+='</div>';
+  document.getElementById('re-body').innerHTML=html;
+  document.getElementById('mod-reentry').classList.add('open');
+  renderAll();
+}
+
+function acceptReentry(){
+  acceptReinstateOrReentry();
+}
+
+function declineReentry(){
+  const{player,idx}=pendingReentry;
+  G.eliminated[player.abbr]=true;
+  G.declinedReentry=G.declinedReentry||{};
+  G.declinedReentry[player.abbr]=true;
+  pendingReentry=null;
+  document.getElementById('mod-reentry').classList.remove('open');
+  // Only hint about reinstate if all remaining active players have >= 1 drop
+  const cfg=G.cfg;
+  const allHaveDrop=getActive().every(q=>(cfg.final-1-getCum(q.abbr))>=cfg.drop);
+  toast(`${player.abbr} is OUT! 💀${allHaveDrop?' — Reinstate button available if needed':''}`, 'red');
+  processReentry(idx+1);
+}
+
+function reinstatePlayer(abbr){
+  if(!G.declinedReentry||!G.declinedReentry[abbr])return;
+  const cfg=G.cfg;
+  // Guard: only proceed if all active players have >= 1 drop
+  const allHaveDrop=getActive().every(q=>(cfg.final-1-getCum(q.abbr))>=cfg.drop);
+  if(!allHaveDrop){
+    // Button should not be visible in this case, but guard anyway
+    toast('Reinstate not available — a player has no drops left','red');
+    return;
+  }
+  const player=G.players.find(p=>p.abbr===abbr);
+  if(!player)return;
+  const cum=getCum(abbr);
+  const others=getActive().filter(q=>q.abbr!==abbr);
+  const canReenter=others.length>0&&others.every(q=>(cfg.final-1-getCum(q.abbr))>=cfg.drop);
+  const maxScore=others.length>0?Math.max(...others.map(q=>getCum(q.abbr))):cum;
+  const blockers=others.filter(q=>(cfg.final-1-getCum(q.abbr))<cfg.drop);
+
+  pendingReentry={player,cum,reentryAt:maxScore,idx:-1,canReenter,blockers};
+
+  const btn=document.getElementById('btn-accept');
+  document.getElementById('re-sub').textContent=
+    `Reinstating ${player.name} (${player.abbr}) — score was ${cum}`;
+
+  let html=`<div class="reinfo">
+    <strong>${player.abbr}</strong> was previously declined. You can reinstate them now.<br><br>`;
+  if(canReenter){
+    html+=`Re-entry score will reset to <strong>${maxScore}</strong> (highest among remaining players).<br><br>
+      Re-entry adds <strong>$${cfg.cash}</strong> to the pot (new pot: $${getTotalPot()+cfg.cash}).<br><br>
+      <strong style="color:var(--green)">Re-entry permitted.</strong>`;
+    btn.disabled=false;btn.style.opacity='1';
+  } else {
+    html+=`<strong>Re-entry not permitted</strong> — other players don't have enough room.`;
+    if(blockers.length){
+      html+=`<div class="warn-box">Blocking: ${blockers.map(q=>`${q.abbr} (${cfg.final-1-getCum(q.abbr)} pts left)`).join(', ')}</div>`;
+    }
+    btn.disabled=true;btn.style.opacity='0.32';
+  }
+  html+='</div>';
+  document.getElementById('re-body').innerHTML=html;
+  document.getElementById('mod-reentry').classList.add('open');
+}
+
+function acceptReinstateOrReentry(){
+  // Unified accept — handles both normal reentry and reinstate flows
+  if(!pendingReentry||!pendingReentry.canReenter)return;
+  const{player,reentryAt,idx}=pendingReentry;
+  G.reentry[player.abbr]=true;
+  G.reentryScore[player.abbr]=reentryAt;
+  G.reentryCount[player.abbr]=(G.reentryCount[player.abbr]||0)+1;
+  // Remove from eliminated and declined lists
+  delete G.eliminated[player.abbr];
+  if(G.declinedReentry)delete G.declinedReentry[player.abbr];
+  G.rounds.push({scores:{},reentryFor:player.abbr});
+  pendingReentry=null;
+  document.getElementById('mod-reentry').classList.remove('open');
+  toast(`${player.abbr} re-enters at ${reentryAt}! Pot now $${getTotalPot()}`,'purple');
+  if(idx>=0)processReentry(idx+1);
+  else{renderAll();}
+}
+
+function afterRound(){
+  const active=getActive();
+  if(active.length<=1)G.gameOver=true;
+  renderAll();
+  if(!G.gameOver&&active.length>=2){
+    const n=G.rounds.filter(r=>!r.reentryFor).length;
+    toast(`Round ${n} saved!`,'gold');
+    // Show Rummy winner celebration
+    const lastRound=G.rounds.filter(r=>!r.reentryFor).slice(-1)[0];
+    if(lastRound){
+      const rummyWinner=G.players.find(p=>lastRound.scores[p.abbr]===0);
+      if(rummyWinner){
+        const reaction=RUMMY_REACTIONS[Math.floor(Math.random()*RUMMY_REACTIONS.length)];
+        const cel=document.getElementById('rummy-celebrate');
+        cel.innerHTML=`<div class="rummy-celebrate">
+          <div class="rummy-celebrate-name pct${rummyWinner.ci}">🎯 ${rummyWinner.abbr} — RUMMY!</div>
+          <div class="rummy-celebrate-msg">${reaction}</div>
+        </div>`;
+        cel.style.display='block';
+        setTimeout(()=>{cel.style.display='none';},4200);
+      }
+    }
+  }
+}
+
+function renderDangerBanner(){
+  const banner=document.getElementById('danger-banner');
+  if(!G||!G.cfg||G.gameOver){banner.style.display='none';return;}
+  const cfg=G.cfg;
+  const active=getActive();
+  // Only active players with 0 drops left but not yet eliminated
+  const dangerPlayers=active.filter(p=>{
+    const cum=getCum(p.abbr);
+    const rem=cfg.final-1-cum;
+    return rem>0&&Math.floor(rem/cfg.drop)===0;
+  });
+  if(dangerPlayers.length===0){banner.style.display='none';return;}
+
+  let chips=dangerPlayers.map(p=>{
+    const cum=getCum(p.abbr);
+    const rem=cfg.final-1-cum;
+    return `<div class="danger-chip">
+      <div style="display:flex;align-items:center;gap:6px">
+        <div style="width:10px;height:10px;border-radius:50%;background:var(--red);animation:blink 0.7s step-start infinite;flex-shrink:0"></div>
+        <span class="danger-chip-abbr pct${p.ci}" style="font-size:15px">${p.abbr}</span>
+      </div>
+      <div style="margin-top:4px">
+        <div style="font-size:12px;font-weight:600;color:var(--red);font-family:'Rajdhani',sans-serif;letter-spacing:.04em">${cum} pts — 0 DROPS LEFT</div>
+        <div style="font-size:10px;color:var(--text3);margin-top:1px">Only ${rem} pts before bust · Next FC = OUT</div>
+      </div>
+    </div>`;
+  }).join('');
+
+  banner.innerHTML=`<div class="danger-banner">
+    <div class="danger-banner-title">🔥 DANGER ZONE — ZERO DROPS REMAINING</div>
+    <div class="danger-chips">${chips}</div>
+  </div>`;
+  banner.style.display='block';
+}
+
+/* ─── EDIT ROUND ────────────────────────────────────── */
+function openEdit(ri){
+  const r=G.rounds[ri];if(!r||r.reentryFor)return;
+  editingRoundIdx=ri;
+  document.getElementById('edit-sub').textContent=
+    `Editing Round ${getRoundNum(ri)} — same validations apply`;
+  const cfg=G.cfg;
+  const pip=G.players.filter(p=>r.scores&&r.scores[p.abbr]!==undefined);
+  let h='';
+  pip.forEach(p=>{
+    h+=`<div class="ecell">
+      <div class="echd">
+        <div class="eavt pc${p.ci}">${p.abbr}</div>
+        <div style="font-size:11px;color:var(--text2)">${p.name}</div>
+      </div>
+      <input class="einp" id="ei-${p.abbr}" type="number" min="0" max="${cfg.full}"
+        value="${r.scores[p.abbr]}" style="width:100%">
+      <div class="qrow" style="margin-top:5px">
+        <button class="qb qb-d"  onclick="setEQ('${p.abbr}','D')">D</button>
+        <button class="qb qb-md" onclick="setEQ('${p.abbr}','MD')">MD</button>
+        <button class="qb qb-fc" onclick="setEQ('${p.abbr}','FC')">FC</button>
+        <button class="qb qb-r"  onclick="setEQ('${p.abbr}','R')">R</button>
+      </div>
+    </div>`;
+  });
+  document.getElementById('edit-grid').innerHTML=h;
+  hideErr('err-edit');
+  document.getElementById('mod-edit').classList.add('open');
+}
+
+function setEQ(abbr,type){
+  const inp=document.getElementById('ei-'+abbr);if(!inp)return;
+  inp.value={D:G.cfg.drop,MD:G.cfg.mid,FC:G.cfg.full,R:0}[type];
+  inp.classList.remove('ierr');
+}
+
+function saveEdit(){
+  hideErr('err-edit');
+  const r=G.rounds[editingRoundIdx];const cfg=G.cfg;
+  const pip=G.players.filter(p=>r.scores&&r.scores[p.abbr]!==undefined);
+  const ns={};let hasErr=false,zeroCount=0,errMsg='';
+  for(const p of pip){
+    const inp=document.getElementById('ei-'+p.abbr);
+    const raw=inp?inp.value.trim():'';const val=Number(raw);
+    if(raw===''||isNaN(val)||val<0){inp&&inp.classList.add('ierr');errMsg='All scores required.';hasErr=true;}
+    else if(val===1){inp&&inp.classList.add('ierr');errMsg='Score of 1 is not valid. Use 0 (Rummy) or 2+.';hasErr=true;}
+    else if(val>cfg.full){inp&&inp.classList.add('ierr');errMsg=`Max score is ${cfg.full}.`;hasErr=true;}
+    else{inp&&inp.classList.remove('ierr');ns[p.abbr]=Math.round(val);if(val===0)zeroCount++;}
+  }
+  if(hasErr){showErr('err-edit',errMsg);return;}
+  if(zeroCount===0){showErr('err-edit','Every round must have exactly one Rummy (R=0)!');return;}
+  if(zeroCount>1){showErr('err-edit','Only one player can score 0 (Rummy) per round!');return;}
+  G.rounds[editingRoundIdx].scores=ns;
+  recomputeState();closeEdit();renderAll();
+  toast('Round updated!','amber');
+}
+
+function recomputeState(){
+  G.eliminated={};G.reentry={};G.reentryScore={};G.gameOver=false;
+  /* Preserve reentry scores already stored */
+  const saved=Object.assign({},G.reentryScore);
+  G.rounds.forEach(r=>{if(r.reentryFor){G.reentry[r.reentryFor]=true;}});
+  Object.assign(G.reentryScore,saved);
+  const cfg=G.cfg;
+  for(const p of G.players){
+    if(getCum(p.abbr)>=cfg.final&&G.reentry[p.abbr])G.eliminated[p.abbr]=true;
+  }
+  if(getActive().length<=1)G.gameOver=true;
+}
+
+function closeEdit(){
+  editingRoundIdx=null;
+  document.getElementById('mod-edit').classList.remove('open');
+}
+
+/* ─── SETTLEMENT ────────────────────────────────────── */
+function openSettle(){
+  switchTab('tab-summary');
+  renderSettleSummary();
+  renderExpensesTab();
+  document.getElementById('inc-display').textContent=G.cfg.cash;
+  document.getElementById('mod-settle').classList.add('open');
+}
+
+function switchTab(id){
+  const tabs=['tab-summary','tab-expenses','tab-payout','tab-whopays'];
+  document.querySelectorAll('.stab').forEach((b,i)=>b.classList.toggle('active',tabs[i]===id));
+  document.querySelectorAll('.stab-panel').forEach(p=>p.classList.toggle('active',p.id===id));
+  if(id==='tab-payout'||id==='tab-whopays')renderPayoutTabs();
+}
+
+/* ─── PAYOUT CALCULATION ────────────────────────────── */
+/*
+  ALGORITHM
+  ─────────
+  1. distPot = totalPot - expenses
+  2. dropsLeft per player (eliminated = 0)
+  3. Distribute distPot proportionally by drops in $inc ($25) chunks
+  4. Every active player guaranteed minimum $inc — if proportional gives less, top up
+  5. Remainder distributed in $5 chunks by tier (most drops first, lowest score wins ties)
+  6. Sub-$5 leftover → lowest score in top tier
+  7. Add expense reimbursements on top
+  8. net = received - contributed
+*/
+function computePayouts(){
+  const{players,cfg}=G;
+  const totalPot = getTotalPot();
+  const expTotal = getExpensesTotal();
+  const distPot  = Math.max(0, totalPot - expTotal);
+  const inc      = cfg.cash;  // $25
+  const SPLIT    = 5;         // $5
+
+  /* Contributions */
+  const contrib={};
+  players.forEach(p=>{
+    contrib[p.abbr]=cfg.cash+(G.reentryCount[p.abbr]||0)*cfg.cash;
+  });
+
+  /* Drops remaining — eliminated = 0 */
+  const drops={};
+  players.forEach(p=>{
+    const cum=getCum(p.abbr);
+    drops[p.abbr]=G.eliminated[p.abbr]?0:Math.max(0,Math.floor((cfg.final-1-cum)/cfg.drop));
+  });
+  const totalDrops=Object.values(drops).reduce((s,v)=>s+v,0);
+  const activePlayers=players.filter(p=>!G.eliminated[p.abbr]);
+
+  /* Step A: raw proportional share of distPot by drops, floored to $inc */
+  const share={};
+  players.forEach(p=>{
+    if(totalDrops===0||G.eliminated[p.abbr]){share[p.abbr]=0;return;}
+    share[p.abbr]=Math.floor((drops[p.abbr]/totalDrops)*distPot/inc)*inc;
+  });
+
+  /* Step B: guarantee every active player at least $inc
+     Top up from the pot if their proportional share < $inc */
+  activePlayers.forEach(p=>{
+    if(share[p.abbr]<inc)share[p.abbr]=inc;
+  });
+
+  /* Step C: compute remainder = distPot - sum of shares */
+  let remainder=distPot-Object.values(share).reduce((s,v)=>s+v,0);
+
+  /* Safety: if over-allocated (unlikely but possible with many players + guarantees),
+     reduce shares from worst players first */
+  if(remainder<0){
+    const byWorst=[...activePlayers].sort((a,b)=>drops[a.abbr]-drops[b.abbr]||getCum(b.abbr)-getCum(a.abbr));
+    for(const p of byWorst){
+      if(remainder>=0)break;
+      const canReduce=share[p.abbr]-inc; // never go below $inc minimum
+      const reduce=Math.min(-remainder,canReduce);
+      share[p.abbr]-=reduce;
+      remainder+=reduce;
+    }
+  }
+
+  /* Step C: distribute remainder proportionally in $5 chunks
+     using the Largest Remainder Method — fairest fractional split.
+     Any sub-$5 leftover goes to the lowest-scoring active player. */
+  if(remainder>0.001){
+    const fiveChunks=Math.floor(remainder/SPLIT);
+    const subFive=remainder-fiveChunks*SPLIT;
+
+    if(fiveChunks>0){
+      // Exact proportional chunk entitlement per player
+      const exact={};
+      activePlayers.forEach(p=>{
+        exact[p.abbr]=totalDrops>0?(drops[p.abbr]/totalDrops)*fiveChunks:0;
+      });
+      // Floor each
+      const floored={};
+      activePlayers.forEach(p=>{floored[p.abbr]=Math.floor(exact[p.abbr]);});
+      // Remaining chunks distributed by largest fractional remainder, tiebreak by lowest score
+      let chunksLeft=fiveChunks-activePlayers.reduce((s,p)=>s+floored[p.abbr],0);
+      const byFrac=[...activePlayers].sort((a,b)=>{
+        const fa=exact[a.abbr]-floored[a.abbr];
+        const fb=exact[b.abbr]-floored[b.abbr];
+        if(Math.abs(fb-fa)>0.0001)return fb-fa; // highest fraction first
+        return getCum(a.abbr)-getCum(b.abbr);    // lowest score wins tiebreak
+      });
+      let ci=0;
+      while(chunksLeft>0&&ci<byFrac.length){floored[byFrac[ci].abbr]++;chunksLeft--;ci++;}
+      activePlayers.forEach(p=>{share[p.abbr]+=floored[p.abbr]*SPLIT;});
+    }
+
+    // Sub-$5 remainder → lowest scoring active player
+    if(subFive>0.001){
+      const lowest=[...activePlayers].sort((a,b)=>getCum(a.abbr)-getCum(b.abbr))[0];
+      if(lowest)share[lowest.abbr]+=Math.round(subFive*100)/100;
+    }
+  }
+
+  /* Step E: expense reimbursements on top of drop share */
+  const expReimb={};
+  players.forEach(p=>{expReimb[p.abbr]=0;});
+  expenses.forEach(e=>{if(expReimb[e.playerAbbr]!==undefined)expReimb[e.playerAbbr]+=e.amount;});
+
+  const receive={},net={};
+  players.forEach(p=>{
+    receive[p.abbr]=(share[p.abbr]||0)+(expReimb[p.abbr]||0);
+    net[p.abbr]=receive[p.abbr]-contrib[p.abbr];
+  });
+
+  return{totalPot,expTotal,distPot,drops,totalDrops,contrib,expReimb,
+         dropShare:share,receive,net,inc,splitInc:SPLIT};
+}
+
+function getExpensesTotal(){
+  return expenses.reduce((s,e)=>s+(+e.amount||0),0);
+}
+
+/* ─── SUMMARY TAB ───────────────────────────────────── */
+function renderSettleSummary(){
+  const{players,cfg}=G;
+  const rounds=G.rounds.filter(r=>!r.reentryFor).length;
+  const pot=getTotalPot();
+  const re=Object.values(G.reentryCount||{}).reduce((s,v)=>s+v,0);
+  document.getElementById('settle-sub').textContent=
+    `${rounds} round${rounds!==1?'s':''} · ${players.length} players · Total pot $${pot}`;
+  document.getElementById('settle-stats').innerHTML=`
+    <div class="ssbox"><div class="sslabel">Total Pot</div><div class="ssval">$${pot}</div></div>
+    <div class="ssbox"><div class="sslabel">Players</div><div class="ssval">${players.length}</div></div>
+    <div class="ssbox"><div class="sslabel">Rounds</div><div class="ssval">${rounds}</div></div>
+    <div class="ssbox"><div class="sslabel">Re-entries</div><div class="ssval">${re}</div></div>`;
+
+  const pd=[...players].map(p=>({
+    ...p,cum:getCum(p.abbr),isOut:!!G.eliminated[p.abbr],
+    dropsLeft:Math.max(0,Math.floor((cfg.final-1-getCum(p.abbr))/cfg.drop))
+  })).sort((a,b)=>a.cum-b.cum);
+
+  let h='<div style="margin-top:4px">';
+  pd.forEach((p,rank)=>{
+    const medal=rank===0?'🥇':rank===1?'🥈':rank===2?'🥉':`${rank+1}.`;
+    h+=`<div class="srow">
+      <div class="srank">${medal}</div>
+      <div class="savt pc${p.ci}">${p.abbr}</div>
+      <div style="flex:1">
+        <div class="sname pct${p.ci}">${p.name}
+          ${p.isOut?`<span class="obadge">OUT</span>`:''}
+        </div>
+        <div class="ssub">Score: ${p.cum} · Drops left: ${p.dropsLeft}
+          ${G.reentryCount[p.abbr]?` · Re-entered ($${(G.reentryCount[p.abbr]||0)*G.cfg.cash} extra)`:''}</div>
+      </div>
+    </div>`;
+  });
+  h+='</div>';
+  document.getElementById('settle-rankings').innerHTML=h;
+}
+
+/* ─── EXPENSES TAB ──────────────────────────────────── */
+function renderExpensesTab(){renderExpList();updateExpTotals();}
+
+function renderExpList(){
+  const{players}=G;let h='';
+  expenses.forEach((e,i)=>{
+    h+=`<div class="exp-row">
+      <select onchange="expenses[${i}].playerAbbr=this.value;updateExpTotals()">
+        ${players.map(p=>`<option value="${p.abbr}"${p.abbr===e.playerAbbr?' selected':''}>${p.abbr} — ${p.name}</option>`).join('')}
+      </select>
+      <input class="edsc" type="text" value="${e.desc||''}" placeholder="Description"
+        oninput="expenses[${i}].desc=this.value">
+      <input class="edamt" type="number" value="${e.amount||''}" placeholder="$" min="0"
+        oninput="expenses[${i}].amount=+this.value||0;updateExpTotals()">
+      <button class="edel" onclick="removeExp(${i})">×</button>
+    </div>`;
+  });
+  document.getElementById('exp-list').innerHTML=h;
+}
+
+function addExpenseRow(){
+  expenses.push({playerAbbr:G.players[0].abbr,desc:'',amount:0});
+  renderExpList();updateExpTotals();
+}
+function removeExp(i){expenses.splice(i,1);renderExpList();updateExpTotals();}
+function updateExpTotals(){
+  const t=getExpensesTotal();const pot=getTotalPot();
+  document.getElementById('exp-total').textContent='$'+t.toFixed(2);
+  document.getElementById('exp-rem').textContent='$'+Math.max(0,pot-t).toFixed(2);
+}
+
+/* ─── PAYOUT + WHO PAYS WHOM TABS ───────────────────── */
+function renderPayoutTabs(){
+  const res=computePayouts();
+  const{players,cfg}=G;
+
+  /* Sorted by score */
+  const pd=[...players].map(p=>({
+    ...p,
+    cum:getCum(p.abbr),isOut:!!G.eliminated[p.abbr],
+    dropsLeft:res.drops[p.abbr],
+    contrib:res.contrib[p.abbr],
+    expReimb:res.expReimb[p.abbr]||0,
+    dropShare:res.dropShare[p.abbr]||0,
+    total:res.receive[p.abbr],
+    net:res.net[p.abbr]
+  })).sort((a,b)=>a.cum-b.cum);
+
+  /* ── PAYOUT TAB ── */
+  let h=`<div class="sstats" style="margin-bottom:14px">
+    <div class="ssbox"><div class="sslabel">Total Pot</div>
+      <div class="ssval">$${res.totalPot}</div></div>
+    <div class="ssbox"><div class="sslabel">Expenses</div>
+      <div class="ssval" style="color:var(--amber)">$${res.expTotal.toFixed(2)}</div></div>
+    <div class="ssbox"><div class="sslabel">Distributable</div>
+      <div class="ssval" style="color:var(--teal)">$${res.distPot.toFixed(2)}</div></div>
+    <div class="ssbox"><div class="sslabel">Total Drops</div>
+      <div class="ssval">${res.totalDrops}</div></div>
+  </div>
+  <div class="payout-formula">
+    <b>How payouts are calculated:</b><br>
+    1. Every active player gets a guaranteed minimum of <b>$${cfg.cash}</b>.<br>
+    2. Remaining pot is split proportionally by drops left, in <b>$${cfg.cash}</b> increments.<br>
+    3. Leftover (not divisible by $${cfg.cash}) is split in <b>$5</b> increments, equal within each drop tier.<br>
+    4. Any sub-$5 remainder goes to the lowest-scoring player in the top tier.<br>
+    5. Shared expenses are reimbursed on top.
+  </div>`;
+
+  pd.forEach((p,rank)=>{
+    const medal=rank===0?'🥇':rank===1?'🥈':rank===2?'🥉':`${rank+1}.`;
+    const n=p.net;
+    h+=`<div class="srow">
+      <div class="srank">${medal}</div>
+      <div class="savt pc${p.ci}">${p.abbr}</div>
+      <div style="flex:1">
+        <div class="sname pct${p.ci}">${p.name}
+          ${p.isOut?`<span class="obadge">OUT</span>`:`<span class="rbadge" style="background:rgba(82,217,138,.18);color:var(--green);border-color:rgba(82,217,138,.3)">ACTIVE</span>`}
+        </div>
+        <div class="ssub">Score ${p.cum} · ${p.dropsLeft} drops · Paid in $${p.contrib}
+          ${p.expReimb>0?` · Exp reimb +$${p.expReimb.toFixed(2)}`:''}</div>
+        <div style="font-size:10px;color:var(--text3);margin-top:2px">
+          Drop share: <b style="color:var(--text2)">$${p.dropShare}</b>
+          ${p.expReimb>0?` + reimb $${p.expReimb.toFixed(2)}`:''}
+          → receives <b style="color:var(--ivory)">$${p.total.toFixed(2)}</b>
+        </div>
+      </div>
+      <div style="text-align:right">
+        <div class="snet ${n>0?'mp':n<0?'mn':'mz'}">${n>=0?'+':''}$${n.toFixed(2)}</div>
+        <div class="sgets">receives $${p.total.toFixed(2)}</div>
+      </div>
+    </div>`;
+  });
+  document.getElementById('payout-body').innerHTML=h;
+
+  /* ── WHO PAYS WHOM TAB — largest-balance-first greedy (minimizes transactions) ── */
+  const balances={};
+  players.forEach(p=>{balances[p.abbr]=Math.round(res.net[p.abbr]*100)/100;});
+
+  const txns=[];
+  let safety=0;
+  while(safety++<200){
+    // Always pick largest creditor and largest debtor
+    const creditors=players.filter(p=>balances[p.abbr]>0.005).sort((a,b)=>balances[b.abbr]-balances[a.abbr]);
+    const debtors  =players.filter(p=>balances[p.abbr]<-0.005).sort((a,b)=>balances[a.abbr]-balances[b.abbr]);
+    if(!creditors.length||!debtors.length)break;
+    const creditor=creditors[0];
+    const debtor  =debtors[0];
+    const amt=Math.round(Math.min(balances[creditor.abbr],Math.abs(balances[debtor.abbr]))*100)/100;
+    if(amt<0.005)break;
+    txns.push({from:debtor,to:creditor,amount:amt});
+    balances[creditor.abbr]=Math.round((balances[creditor.abbr]-amt)*100)/100;
+    balances[debtor.abbr]  =Math.round((balances[debtor.abbr]  +amt)*100)/100;
+  }
+
+  let ph='';
+  if(txns.length===0){
+    ph=`<div style="text-align:center;color:var(--text3);font-size:13px;padding:20px 0">🎉 All square — no payments needed!</div>`;
+  } else {
+    txns.forEach(t=>{
+      ph+=`<div class="pay-row">
+        <div class="pay-avt pc${t.from.ci}">${t.from.abbr}</div>
+        <div class="pay-name pct${t.from.ci}">${t.from.abbr}</div>
+        <div class="pay-arrow">→</div>
+        <div class="pay-name pct${t.to.ci}">${t.to.abbr}</div>
+        <div class="pay-avt pc${t.to.ci}">${t.to.abbr}</div>
+        <div class="pay-desc">${t.from.name} pays ${t.to.name}</div>
+        <div class="pay-amt">$${t.amount.toFixed(2)}</div>
+      </div>`;
+    });
+  }
+  document.getElementById('pay-list').innerHTML=ph;
+}
+
+function recalcSettle(){
+  renderSettleSummary();
+  renderPayoutTabs();
+  updateExpTotals();
+  toast('Recalculated!','teal');
+}
+
+function closeSettle(){document.getElementById('mod-settle').classList.remove('open');}
+
+/* ─── END GAME ──────────────────────────────────────── */
+function endGame(){
+  document.getElementById('mod-settle').classList.remove('open');
+  selPlayers=[];G={};editingRoundIdx=null;pendingReentry=null;
+  reentryQueue=[];expenses=[];
+  document.querySelectorAll('.pchip').forEach(c=>c.classList.remove('active'));
+  document.getElementById('sel-display').innerHTML=
+    '<span style="font-size:12px;color:var(--text3)">None selected</span>';
+  document.getElementById('manual-row').style.display='none';
+  document.getElementById('hpills').innerHTML='';
+  document.getElementById('hacts').innerHTML='';
+  document.getElementById('gob').style.display='none';
+  switchScreen('scr-setup');
+}
+
+/* ─── UTILS ─────────────────────────────────────────── */
+function toast(msg,type=''){
+  const t=document.getElementById('toast');
+  t.textContent=msg;
+  t.className='toast'+(type?' t-'+type:'')+' show';
+  clearTimeout(t._t);
+  t._t=setTimeout(()=>t.classList.remove('show'),3600);
+}
+function showErr(id,msg){const e=document.getElementById(id);if(msg)e.textContent=msg;e.classList.add('show');}
+function hideErr(id){document.getElementById(id).classList.remove('show');}
+
+/* ─── BOOT ──────────────────────────────────────────── */
+initSetup();
+if('serviceWorker' in navigator && location.protocol !== 'file:'){
+  // Inline service worker as a blob so no separate sw.js file is needed
+  const swCode=`
+    const CACHE='rummy-v1';
+    const ASSETS=['/'];
+    self.addEventListener('install',e=>{
+      e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)));
+      self.skipWaiting();
+    });
+    self.addEventListener('activate',e=>{
+      e.waitUntil(caches.keys().then(keys=>Promise.all(
+        keys.filter(k=>k!==CACHE).map(k=>caches.delete(k))
+      )));
+      self.clients.claim();
+    });
+    self.addEventListener('fetch',e=>{
+      e.respondWith(
+        caches.match(e.request).then(cached=>cached||fetch(e.request).catch(()=>cached))
+      );
+    });
+  `;
+  const blob=new Blob([swCode],{type:'application/javascript'});
+  const swUrl=URL.createObjectURL(blob);
+  navigator.serviceWorker.register(swUrl,{scope:'./'})
+    .then(()=>console.log('Rummy PWA: service worker registered'))
+    .catch(()=>{}); // file:// protocol doesn't support SW — silent fail, app works fine
+}
+
+</script>
+</div>
+</body>
+</html>
