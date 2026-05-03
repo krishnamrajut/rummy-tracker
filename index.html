@@ -770,7 +770,7 @@ table.mt tbody tr:hover td{background:rgba(240,192,96,.03);}
 <!-- ═══════════ RE-ENTRY MODAL ═══════════ -->
 <div class="mov" id="mod-reentry">
   <div class="modal">
-    <div class="modal-title">Re-Entry Decision</div>
+    <div class="modal-title" id="reentry-title">Re-Entry Decision</div>
     <div class="modal-sub" id="re-sub"></div>
     <div id="re-body"></div>
     <div class="mfoot">
@@ -1311,8 +1311,15 @@ function processReentry(idx){
   const cum=getCum(player.abbr);
   const cfg=G.cfg;
 
-  /* Rule: ALL other remaining active players must have ≥ 1 drop of room */
-  const others=getActive().filter(q=>q.abbr!==player.abbr&&!G.eliminated[q.abbr]);
+  /* Rule: ALL other remaining active players must have ≥ 1 drop of room.
+     Exclude: already eliminated + others in the current crossed queue
+     (they haven't been decided yet, treat them as potentially out for this check) */
+  const queueAbbrs=new Set(reentryQueue.map(p=>p.abbr));
+  const others=getActive().filter(q=>
+    q.abbr!==player.abbr &&
+    !G.eliminated[q.abbr] &&
+    !queueAbbrs.has(q.abbr)  // exclude other players also in reentry queue
+  );
   const canReenter=others.length>0&&others.every(q=>(cfg.final-1-getCum(q.abbr))>=cfg.drop);
   const blockers=others.filter(q=>(cfg.final-1-getCum(q.abbr))<cfg.drop);
   const maxScore=others.length>0?Math.max(...others.map(q=>getCum(q.abbr))):cum;
@@ -1321,8 +1328,19 @@ function processReentry(idx){
 
   const btn=document.getElementById('btn-accept');
   const btnDecline=document.getElementById('btn-decline');
+
+  // Show queue progress if multiple players crossed at once
+  const queueInfo=reentryQueue.length>1
+    ? ` (${idx+1} of ${reentryQueue.length})`
+    : '';
+  // Update modal title with queue progress
+  const titleEl=document.getElementById('reentry-title');
+  if(titleEl)titleEl.textContent=reentryQueue.length>1
+    ? `Re-Entry Decision (${idx+1} of ${reentryQueue.length})`
+    : 'Re-Entry Decision';
+
   document.getElementById('re-sub').textContent=
-    `${player.name} (${player.abbr}) reached ${cum} — out limit is ≥${cfg.final}`;
+    `${player.name} (${player.abbr}) reached ${cum} — out limit is ≥${cfg.final}${queueInfo}`;
 
   let html=`<div class="reinfo">
     <strong>${player.abbr}</strong> crossed the out limit with score <strong>${cum}</strong>.<br><br>`;
@@ -1594,14 +1612,12 @@ function switchTab(id){
 /*
   ALGORITHM
   ─────────
-  1. distPot = totalPot - expenses
-  2. dropsLeft per player (eliminated = 0)
-  3. Distribute distPot proportionally by drops in $inc ($25) chunks
-  4. Every active player guaranteed minimum $inc — if proportional gives less, top up
-  5. Remainder distributed in $5 chunks by tier (most drops first, lowest score wins ties)
-  6. Sub-$5 leftover → lowest score in top tier
-  7. Add expense reimbursements on top
-  8. net = received - contributed
+  Phase 1: Award $inc ($25) per drop to each player. Eliminated = 0 drops = $0.
+  Phase 2: Split remaining pot equally among all active players in $inc chunks.
+  Phase 3: Split remainder equally in $5 chunks, lowest score wins tiebreak.
+  Phase 4: Sub-$5 leftover → lowest scoring active player.
+  Phase 5: Add expense reimbursements on top.
+  Net = received - contributed.
 */
 function computePayouts(){
   const{players,cfg}=G;
@@ -1626,72 +1642,62 @@ function computePayouts(){
   const totalDrops=Object.values(drops).reduce((s,v)=>s+v,0);
   const activePlayers=players.filter(p=>!G.eliminated[p.abbr]);
 
-  /* Step A: raw proportional share of distPot by drops, floored to $inc */
+  /* Phase 1: $inc per EXTRA drop above the minimum drops among active players.
+     e.g. K2=6 drops, K1=5 drops → minDrops=5 → K2 gets 1×$25 extra, K1 gets 0 extra.
+     This rewards players with more drops proportionally before the equal split. */
+  const minDrops=activePlayers.length>0
+    ? Math.min(...activePlayers.map(p=>drops[p.abbr]))
+    : 0;
   const share={};
   players.forEach(p=>{
-    if(totalDrops===0||G.eliminated[p.abbr]){share[p.abbr]=0;return;}
-    share[p.abbr]=Math.floor((drops[p.abbr]/totalDrops)*distPot/inc)*inc;
+    const extraDrops=Math.max(0,drops[p.abbr]-minDrops);
+    share[p.abbr]=extraDrops*inc;
   });
 
-  /* Step B: guarantee every active player at least $inc
-     Top up from the pot if their proportional share < $inc */
-  activePlayers.forEach(p=>{
-    if(share[p.abbr]<inc)share[p.abbr]=inc;
-  });
-
-  /* Step C: compute remainder = distPot - sum of shares */
-  let remainder=distPot-Object.values(share).reduce((s,v)=>s+v,0);
-
-  /* Safety: if over-allocated (unlikely but possible with many players + guarantees),
-     reduce shares from worst players first */
-  if(remainder<0){
-    const byWorst=[...activePlayers].sort((a,b)=>drops[a.abbr]-drops[b.abbr]||getCum(b.abbr)-getCum(a.abbr));
-    for(const p of byWorst){
-      if(remainder>=0)break;
-      const canReduce=share[p.abbr]-inc; // never go below $inc minimum
-      const reduce=Math.min(-remainder,canReduce);
-      share[p.abbr]-=reduce;
-      remainder+=reduce;
+  /* Phase 2: split remaining equally among all active in $inc chunks */
+  let remaining=distPot-Object.values(share).reduce((s,v)=>s+v,0);
+  if(remaining>0&&activePlayers.length>0){
+    const equalChunks=Math.floor(remaining/(inc*activePlayers.length));
+    if(equalChunks>0){
+      activePlayers.forEach(p=>{share[p.abbr]+=equalChunks*inc;});
+      remaining-=equalChunks*inc*activePlayers.length;
     }
   }
 
-  /* Step C: distribute remainder proportionally in $5 chunks
-     using the Largest Remainder Method — fairest fractional split.
-     Any sub-$5 leftover goes to the lowest-scoring active player. */
-  if(remainder>0.001){
-    const fiveChunks=Math.floor(remainder/SPLIT);
-    const subFive=remainder-fiveChunks*SPLIT;
+  /* Phase 3: split remainder in $5 chunks equally, lowest score priority */
+  if(remaining>0.001&&activePlayers.length>0){
+    const fiveChunks=Math.floor(remaining/SPLIT);
+    const subFive=remaining-fiveChunks*SPLIT;
 
     if(fiveChunks>0){
-      // Exact proportional chunk entitlement per player
+      const n=activePlayers.length;
       const exact={};
-      activePlayers.forEach(p=>{
-        exact[p.abbr]=totalDrops>0?(drops[p.abbr]/totalDrops)*fiveChunks:0;
-      });
-      // Floor each
+      activePlayers.forEach(p=>{exact[p.abbr]=fiveChunks/n;});
       const floored={};
       activePlayers.forEach(p=>{floored[p.abbr]=Math.floor(exact[p.abbr]);});
-      // Remaining chunks distributed by largest fractional remainder, tiebreak by lowest score
       let chunksLeft=fiveChunks-activePlayers.reduce((s,p)=>s+floored[p.abbr],0);
       const byFrac=[...activePlayers].sort((a,b)=>{
         const fa=exact[a.abbr]-floored[a.abbr];
         const fb=exact[b.abbr]-floored[b.abbr];
-        if(Math.abs(fb-fa)>0.0001)return fb-fa; // highest fraction first
-        return getCum(a.abbr)-getCum(b.abbr);    // lowest score wins tiebreak
+        if(Math.abs(fb-fa)>0.0001)return fb-fa;
+        return getCum(a.abbr)-getCum(b.abbr);
       });
       let ci=0;
       while(chunksLeft>0&&ci<byFrac.length){floored[byFrac[ci].abbr]++;chunksLeft--;ci++;}
       activePlayers.forEach(p=>{share[p.abbr]+=floored[p.abbr]*SPLIT;});
     }
 
-    // Sub-$5 remainder → lowest scoring active player
+    /* Phase 4: sub-$5 remainder → second lowest scoring active player
+       (lowest already got priority on the $5 chunk, so next player gets the cents) */
     if(subFive>0.001){
-      const lowest=[...activePlayers].sort((a,b)=>getCum(a.abbr)-getCum(b.abbr))[0];
-      if(lowest)share[lowest.abbr]+=Math.round(subFive*100)/100;
+      const byScore=[...activePlayers].sort((a,b)=>getCum(a.abbr)-getCum(b.abbr));
+      // Give to second player if exists, else first
+      const recipient=byScore.length>1?byScore[1]:byScore[0];
+      if(recipient)share[recipient.abbr]+=Math.round(subFive*100)/100;
     }
   }
 
-  /* Step E: expense reimbursements on top of drop share */
+  /* Phase 5: expense reimbursements on top */
   const expReimb={};
   players.forEach(p=>{expReimb[p.abbr]=0;});
   expenses.forEach(e=>{if(expReimb[e.playerAbbr]!==undefined)expReimb[e.playerAbbr]+=e.amount;});
@@ -1809,10 +1815,10 @@ function renderPayoutTabs(){
   </div>
   <div class="payout-formula">
     <b>How payouts are calculated:</b><br>
-    1. Every active player gets a guaranteed minimum of <b>$${cfg.cash}</b>.<br>
-    2. Remaining pot is split proportionally by drops left, in <b>$${cfg.cash}</b> increments.<br>
-    3. Leftover (not divisible by $${cfg.cash}) is split in <b>$5</b> increments, equal within each drop tier.<br>
-    4. Any sub-$5 remainder goes to the lowest-scoring player in the top tier.<br>
+    1. Each extra drop above the lowest active player earns <b>$${cfg.cash}</b>.<br>
+    2. Remaining pot split equally among all active players in <b>$${cfg.cash}</b> increments.<br>
+    3. Leftover split equally in <b>$5</b> increments, lowest score wins tiebreak.<br>
+    4. Any sub-$5 remainder goes to the lowest-scoring active player.<br>
     5. Shared expenses are reimbursed on top.
   </div>`;
 
