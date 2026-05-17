@@ -411,6 +411,8 @@ table.mt tbody tr:hover td{background:rgba(240,192,96,.03);}
 .qb-fc:hover{background:rgba(192,40,58,.1);}
 .qb-r{border-color:var(--green);color:var(--green);}
 .qb-r:hover{background:rgba(26,122,64,.1);}
+.qb-ws{border-color:var(--purple);color:var(--purple);}
+.qb-ws:hover{background:rgba(96,48,176,.1);}
 .flbl{font-size:9px;color:var(--purple);height:11px;display:block;text-align:center;margin-top:2px;font-style:italic;}
 
 /* Entry controls bar */
@@ -453,6 +455,7 @@ table.mt tbody tr:hover td{background:rgba(240,192,96,.03);}
 .cv0{color:var(--green);font-weight:700;}
 .cv-d{color:var(--text2);}
 .cv-md{color:var(--amber);}
+.cv-ws{color:var(--purple);font-weight:600;}
 .cv-fc{color:var(--red);font-weight:600;}
 .cv-dash{color:var(--text3);}
 .sc-safe{color:var(--green);}
@@ -717,6 +720,7 @@ table.mt tbody tr:hover td{background:rgba(240,192,96,.03);}
         <div class="field"><label>Drop Score (D)</label>  <input type="number" id="cfg-drop"  value="25"  min="1"></div>
         <div class="field"><label>Middle Drop (MD)</label><input type="number" id="cfg-mid"   value="50"  min="1"></div>
         <div class="field"><label>Full Count / Max</label><input type="number" id="cfg-full"  value="80"  min="1"></div>
+        <div class="field"><label>Wrong Show (WS)</label> <input type="number" id="cfg-ws"    value="80"  min="1"></div>
         <div class="field"><label>Out Limit (≥)</label>   <input type="number" id="cfg-final" value="201" min="1"></div>
       </div>
       <div style="margin-top:10px;padding:9px 12px;background:rgba(61,232,192,.05);border:1px solid rgba(61,232,192,.15);border-radius:var(--radius-sm);font-size:11px;color:var(--text3);line-height:1.65;">
@@ -753,7 +757,7 @@ table.mt tbody tr:hover td{background:rgba(240,192,96,.03);}
           <div class="leg"><div class="leg-dot" style="background:var(--text3)"></div>Drop</div>
           <div class="leg"><div class="leg-dot" style="background:var(--amber)"></div>Mid drop</div>
           <div class="leg"><div class="leg-dot" style="background:var(--red)"></div>Full / danger</div>
-          <div class="leg"><div class="leg-dot" style="background:var(--purple)"></div>Re-entry</div>
+          <div class="leg"><div class="leg-dot" style="background:var(--purple)"></div>Wrong Show / Re-entry</div>
         </div>
       </div>
       <div class="tbl-wrap"><table class="mt" id="main-tbl"></table></div>
@@ -882,6 +886,7 @@ const FUNNY={
   D:  ['Padi poindi! 😅','Safe ga drop!','Smart move anna!','Baaga alochinchadu!','Chala wise!'],
   MD: ['Aiyo! Mid drop! 😬','Chesindi chuskundi!','Ardham damage anna!','Ouch! Half pot gone!','Middle lo chesindi!'],
   FC: ['Nakko! Full Count! 💀','Ekkuva aindi! Brutal!','Ante full damage ra!','Somperi! Full count!','Pakka begging now!'],
+  WS: ['Wrong Show ra! 🤦','Ante chesindi chesindi!','Gaali ki cheppadu! 😂','Thappu chesindi anna!','Wrong show penalty! Oops!'],
   R:  ['RUMMY! Legend ra! 👑','ZERO HERO! Maatalaadake!','Untouchable anna! 🔥','Baaga chesthunnadu!','Nenu champion ra! 💪','Nakku sariga cheppadu!']
 };
 // Round-winner reactions (Telugu/Andhra flavour)
@@ -972,13 +977,14 @@ function startGame(){
   const drop =+document.getElementById('cfg-drop').value;
   const mid  =+document.getElementById('cfg-mid').value;
   const full =+document.getElementById('cfg-full').value;
+  const ws   =+document.getElementById('cfg-ws').value;
   const fin  =+document.getElementById('cfg-final').value;
-  if([cash,drop,mid,full,fin].some(v=>!v||v<=0)){
+  if([cash,drop,mid,full,ws,fin].some(v=>!v||v<=0)){
     showErr('err-cfg','All values must be positive numbers');return;
   }
   G={
     players:selPlayers.map((p,i)=>({...p,ci:i%12})),
-    cfg:{cash,drop,mid,full,final:fin},
+    cfg:{cash,drop,mid,full,ws,final:fin},
     rounds:[],
     eliminated:{},
     reentry:{},       // abbr -> true  (used their one reentry)
@@ -1030,6 +1036,7 @@ function cellClass(v,cfg){
   if(v===0)return'cv0';
   if(v===cfg.drop)return'cv-d';
   if(v===cfg.mid)return'cv-md';
+  if(v===cfg.ws)return'cv-ws';
   if(v>=cfg.full)return'cv-fc';
   return'';
 }
@@ -1069,6 +1076,7 @@ function renderStatsBar(){
     <div class="spill">D:<b>${G.cfg.drop}</b></div>
     <div class="spill">MD:<b>${G.cfg.mid}</b></div>
     <div class="spill">FC/Max:<b>${G.cfg.full}</b></div>
+    <div class="spill">WS:<b>${G.cfg.ws}</b></div>
     <div class="spill">Out:&nbsp;<b>≥${G.cfg.final}</b></div>
     <div class="spill">Round:<b>${n+1}</b></div>
     <div class="spill pot">Pot:<b>$${pot}</b></div>`;
@@ -1191,12 +1199,13 @@ function renderTable(){
         h+=`<td style="color:var(--text3);font-size:10px">out</td>`;return;
       }
       h+=`<td>
-        <input class="einp" id="inp-${p.abbr}" type="number" min="0" max="${cfg.full}" placeholder="0–${cfg.full}"
+        <input class="einp" id="inp-${p.abbr}" type="number" min="0" max="${Math.max(cfg.full,cfg.ws)}" placeholder="0–${cfg.full}"
           oninput="onScoreInput('${p.abbr}',this)">
         <div class="qrow">
           <button class="qb qb-d"  onclick="setQ('${p.abbr}','D')"  title="Drop (${cfg.drop})">D</button>
           <button class="qb qb-md" onclick="setQ('${p.abbr}','MD')" title="Mid drop (${cfg.mid})">MD</button>
           <button class="qb qb-fc" onclick="setQ('${p.abbr}','FC')" title="Full count (${cfg.full})">FC</button>
+          <button class="qb qb-ws" onclick="setQ('${p.abbr}','WS')" title="Wrong show (${cfg.ws})">WS</button>
           <button class="qb qb-r"  id="rbtn-${p.abbr}" onclick="setQ('${p.abbr}','R')"  title="Rummy (0)">R</button>
         </div>
         <span class="flbl" id="fl-${p.abbr}"></span>
@@ -1224,14 +1233,14 @@ function renderTable(){
       &nbsp;<button class="btn btn-gold btn-sm" onclick="openSettle()">Settle &amp; Pay Out</button>`;
   } else {
     bsub.style.display='';
-    enote.innerHTML=`Max: ${cfg.full}. <b style="color:var(--amber)">⚠ Select one Rummy (R) before submitting.</b>`;
+    enote.innerHTML=`Max: ${cfg.full} (WS: ${cfg.ws}). <b style="color:var(--amber)">⚠ Select one Rummy (R) before submitting.</b>`;
   }
 }
 
 /* ─── QUICK ENTRY ───────────────────────────────────── */
 function setQ(abbr,type){
   const inp=document.getElementById('inp-'+abbr);if(!inp)return;
-  inp.value={D:G.cfg.drop,MD:G.cfg.mid,FC:G.cfg.full,R:0}[type];
+  inp.value={D:G.cfg.drop,MD:G.cfg.mid,FC:G.cfg.full,WS:G.cfg.ws,R:0}[type];
   inp.classList.remove('ierr');
   const fl=document.getElementById('fl-'+abbr);
   if(fl){
@@ -1318,9 +1327,9 @@ function submitRound(){
     } else if(val===1){
       if(inp)inp.classList.add('ierr');
       errMsg='Score of 1 is not valid. Minimum score is 0 (Rummy) or 2+.';hasErr=true;
-    } else if(val>cfg.full){
+    } else if(val>cfg.full&&val!==cfg.ws){
       if(inp)inp.classList.add('ierr');
-      errMsg=`Max score is ${cfg.full}. ${p.abbr} entered ${val}.`;hasErr=true;
+      errMsg=`Max score is ${cfg.full} (or ${cfg.ws} for Wrong Show). ${p.abbr} entered ${val}.`;hasErr=true;
     } else {
       if(inp)inp.classList.remove('ierr');
       scores[p.abbr]=Math.round(val);
@@ -1582,6 +1591,7 @@ function openEdit(ri){
         <button class="qb qb-d"  onclick="setEQ('${p.abbr}','D')">D</button>
         <button class="qb qb-md" onclick="setEQ('${p.abbr}','MD')">MD</button>
         <button class="qb qb-fc" onclick="setEQ('${p.abbr}','FC')">FC</button>
+        <button class="qb qb-ws" onclick="setEQ('${p.abbr}','WS')">WS</button>
         <button class="qb qb-r"  onclick="setEQ('${p.abbr}','R')">R</button>
       </div>
     </div>`;
@@ -1593,7 +1603,7 @@ function openEdit(ri){
 
 function setEQ(abbr,type){
   const inp=document.getElementById('ei-'+abbr);if(!inp)return;
-  inp.value={D:G.cfg.drop,MD:G.cfg.mid,FC:G.cfg.full,R:0}[type];
+  inp.value={D:G.cfg.drop,MD:G.cfg.mid,FC:G.cfg.full,WS:G.cfg.ws,R:0}[type];
   inp.classList.remove('ierr');
 }
 
@@ -1607,7 +1617,7 @@ function saveEdit(){
     const raw=inp?inp.value.trim():'';const val=Number(raw);
     if(raw===''||isNaN(val)||val<0){inp&&inp.classList.add('ierr');errMsg='All scores required.';hasErr=true;}
     else if(val===1){inp&&inp.classList.add('ierr');errMsg='Score of 1 is not valid. Use 0 (Rummy) or 2+.';hasErr=true;}
-    else if(val>cfg.full){inp&&inp.classList.add('ierr');errMsg=`Max score is ${cfg.full}.`;hasErr=true;}
+    else if(val>cfg.full&&val!==cfg.ws){inp&&inp.classList.add('ierr');errMsg=`Max score is ${cfg.full} (or ${cfg.ws} for Wrong Show).`;hasErr=true;}
     else{inp&&inp.classList.remove('ierr');ns[p.abbr]=Math.round(val);if(val===0)zeroCount++;}
   }
   if(hasErr){showErr('err-edit',errMsg);return;}
@@ -1656,11 +1666,16 @@ function switchTab(id){
 /*
   ALGORITHM
   ─────────
-  Phase 1: Award $inc ($25) per drop to each player. Eliminated = 0 drops = $0.
-  Phase 2: Split remaining pot equally among all active players in $inc chunks.
-  Phase 3: Split remainder equally in $5 chunks, lowest score wins tiebreak.
-  Phase 4: Sub-$5 leftover → lowest scoring active player.
-  Phase 5: Add expense reimbursements on top.
+  Rule: No active player should pay (net ≥ 0). Every active player gets back at least $inc.
+
+  Step 1: Guarantee every active player $inc (their buy-in back). Eliminated = $0.
+  Step 2: From remaining pot, award $inc per extra drop above the second-minimum
+          drop count (only among players who have MORE than the minimum drops).
+          Players at minimum drops already have their guarantee — they don't compete here.
+  Step 3: Split any remaining equally between above-minimum players in $inc chunks.
+  Step 4: $5 chunks equally, lowest score wins tiebreak.
+  Step 5: Sub-$5 → second lowest scoring active player.
+  Step 6: Expense reimbursements on top.
   Net = received - contributed.
 */
 function computePayouts(){
@@ -1668,15 +1683,14 @@ function computePayouts(){
   const totalPot = getTotalPot();
   const expTotal = getExpensesTotal();
   const distPot  = Math.max(0, totalPot - expTotal);
-  const inc      = cfg.cash;  // $25
-  const SPLIT    = 5;         // $5
+  const inc      = cfg.cash;
+  const SPLIT    = 5;
 
-  /* Contributions — original players paid cfg.cash at setup.
-     Mid-game joiners paid 0 at setup (not in original count) but pay via reentryCount. */
+  /* Contributions */
   const contrib={};
   players.forEach(p=>{
     const isMidJoin=!!(G.midGameJoin&&G.midGameJoin[p.abbr]);
-    const basePaid=isMidJoin?0:cfg.cash; // mid-game joiners didn't pay at setup
+    const basePaid=isMidJoin?0:cfg.cash;
     contrib[p.abbr]=basePaid+(G.reentryCount[p.abbr]||0)*cfg.cash;
   });
 
@@ -1689,62 +1703,66 @@ function computePayouts(){
   const totalDrops=Object.values(drops).reduce((s,v)=>s+v,0);
   const activePlayers=players.filter(p=>!G.eliminated[p.abbr]);
 
-  /* Phase 1: $inc per EXTRA drop above the minimum drops among active players.
-     e.g. K2=6 drops, K1=5 drops → minDrops=5 → K2 gets 1×$25 extra, K1 gets 0 extra.
-     This rewards players with more drops proportionally before the equal split. */
-  const minDrops=activePlayers.length>0
-    ? Math.min(...activePlayers.map(p=>drops[p.abbr]))
-    : 0;
+  /* Step 1: guarantee every active player $inc */
   const share={};
-  players.forEach(p=>{
-    const extraDrops=Math.max(0,drops[p.abbr]-minDrops);
-    share[p.abbr]=extraDrops*inc;
-  });
+  players.forEach(p=>{share[p.abbr]=0;});
+  activePlayers.forEach(p=>{share[p.abbr]=inc;});
+  let remaining=distPot-activePlayers.length*inc;
 
-  /* Phase 2: split remaining equally among all active in $inc chunks */
-  let remaining=distPot-Object.values(share).reduce((s,v)=>s+v,0);
-  if(remaining>0&&activePlayers.length>0){
-    const equalChunks=Math.floor(remaining/(inc*activePlayers.length));
-    if(equalChunks>0){
-      activePlayers.forEach(p=>{share[p.abbr]+=equalChunks*inc;});
-      remaining-=equalChunks*inc*activePlayers.length;
+  /* Identify drop tiers among active players */
+  const minDrops=activePlayers.length>0?Math.min(...activePlayers.map(p=>drops[p.abbr])):0;
+  const aboveMin=activePlayers.filter(p=>drops[p.abbr]>minDrops)
+    .sort((a,b)=>drops[b.abbr]-drops[a.abbr]||getCum(a.abbr)-getCum(b.abbr));
+  const secondMin=aboveMin.length>0?Math.min(...aboveMin.map(p=>drops[p.abbr])):minDrops;
+
+  /* Step 2: award $inc per extra drop above secondMin (only for aboveMin players) */
+  if(remaining>0&&aboveMin.length>0){
+    aboveMin.forEach(p=>{
+      const extra=(drops[p.abbr]-secondMin)*inc;
+      const award=Math.min(extra,remaining);
+      share[p.abbr]+=award;
+      remaining-=award;
+    });
+  }
+
+  /* Step 3: split remaining equally among aboveMin players in $inc chunks */
+  if(remaining>0&&aboveMin.length>0){
+    const eqC=Math.floor(remaining/(inc*aboveMin.length));
+    if(eqC>0){
+      aboveMin.forEach(p=>{share[p.abbr]+=eqC*inc;});
+      remaining-=eqC*inc*aboveMin.length;
     }
   }
 
-  /* Phase 3: split remainder in $5 chunks equally, lowest score priority */
-  if(remaining>0.001&&activePlayers.length>0){
+  /* Step 4: $5 chunks equally among aboveMin, lowest score priority */
+  const splitPool=aboveMin.length>0?aboveMin:activePlayers;
+  if(remaining>0.001&&splitPool.length>0){
     const fiveChunks=Math.floor(remaining/SPLIT);
     const subFive=remaining-fiveChunks*SPLIT;
 
     if(fiveChunks>0){
-      const n=activePlayers.length;
-      const exact={};
-      activePlayers.forEach(p=>{exact[p.abbr]=fiveChunks/n;});
-      const floored={};
-      activePlayers.forEach(p=>{floored[p.abbr]=Math.floor(exact[p.abbr]);});
-      let chunksLeft=fiveChunks-activePlayers.reduce((s,p)=>s+floored[p.abbr],0);
-      const byFrac=[...activePlayers].sort((a,b)=>{
-        const fa=exact[a.abbr]-floored[a.abbr];
-        const fb=exact[b.abbr]-floored[b.abbr];
+      const n=splitPool.length;
+      const exact={};splitPool.forEach(p=>{exact[p.abbr]=fiveChunks/n;});
+      const floored={};splitPool.forEach(p=>{floored[p.abbr]=Math.floor(exact[p.abbr]);});
+      let chunksLeft=fiveChunks-splitPool.reduce((s,p)=>s+floored[p.abbr],0);
+      const byFrac=[...splitPool].sort((a,b)=>{
+        const fa=exact[a.abbr]-floored[a.abbr],fb=exact[b.abbr]-floored[b.abbr];
         if(Math.abs(fb-fa)>0.0001)return fb-fa;
         return getCum(a.abbr)-getCum(b.abbr);
       });
       let ci=0;
       while(chunksLeft>0&&ci<byFrac.length){floored[byFrac[ci].abbr]++;chunksLeft--;ci++;}
-      activePlayers.forEach(p=>{share[p.abbr]+=floored[p.abbr]*SPLIT;});
-    }
-
-    /* Phase 4: sub-$5 remainder → second lowest scoring active player
-       (lowest already got priority on the $5 chunk, so next player gets the cents) */
-    if(subFive>0.001){
-      const byScore=[...activePlayers].sort((a,b)=>getCum(a.abbr)-getCum(b.abbr));
-      // Give to second player if exists, else first
-      const recipient=byScore.length>1?byScore[1]:byScore[0];
-      if(recipient)share[recipient.abbr]+=Math.round(subFive*100)/100;
+      splitPool.forEach(p=>{share[p.abbr]+=floored[p.abbr]*SPLIT;});
+      /* Step 5: sub-$5 → second lowest scoring active player */
+      if(subFive>0.001){
+        const byScore=[...splitPool].sort((a,b)=>getCum(a.abbr)-getCum(b.abbr));
+        const recipient=byScore.length>1?byScore[1]:byScore[0];
+        if(recipient)share[recipient.abbr]+=Math.round(subFive*100)/100;
+      }
     }
   }
 
-  /* Phase 5: expense reimbursements on top */
+  /* Step 6: expense reimbursements on top */
   const expReimb={};
   players.forEach(p=>{expReimb[p.abbr]=0;});
   expenses.forEach(e=>{if(expReimb[e.playerAbbr]!==undefined)expReimb[e.playerAbbr]+=e.amount;});
