@@ -780,7 +780,32 @@ table.mt tbody tr:hover td{background:rgba(240,192,96,.03);}
   </div>
 </div>
 
-<!-- ═══════════ EDIT ROUND MODAL ═══════════ -->
+<!-- ═══════════ ADD PLAYER MODAL ═══════════ -->
+<div class="mov" id="mod-addplayer">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-title">Add Player to Game</div>
+    <div class="modal-sub" id="addplayer-sub"></div>
+    <div id="addplayer-body">
+      <div class="scard-title" style="margin-bottom:10px;font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--teal)">Select or Enter Player</div>
+      <div class="chip-grid" id="addplayer-chips" style="margin-bottom:14px"></div>
+      <div style="margin-bottom:12px">
+        <div style="font-size:11px;color:var(--text3);margin-bottom:6px;font-family:'Fira Code',monospace;text-transform:uppercase;letter-spacing:.08em">Or enter a name</div>
+        <div style="display:flex;gap:8px">
+          <input id="addplayer-inp" placeholder="Full name, e.g. Raj Kumar"
+            style="flex:1;background:var(--bg);border:1px solid var(--bdr2);color:var(--text);padding:9px 12px;border-radius:var(--radius-sm);font-size:13px;font-family:'Fira Code',monospace;outline:none">
+        </div>
+      </div>
+      <div style="background:rgba(61,232,192,.06);border:1px solid rgba(61,232,192,.18);border-radius:var(--radius-sm);padding:10px 13px;font-size:11px;color:var(--text3);line-height:1.65">
+        ⓘ New player joins at the <strong style="color:var(--text2)">highest current score</strong> among active players and pays <strong style="color:var(--text2)">$<span id="addplayer-cost"></span></strong> to join the pot.
+      </div>
+      <div class="err" id="err-addplayer" style="margin-top:8px"></div>
+    </div>
+    <div class="mfoot">
+      <button class="btn" onclick="closeAddPlayer()">Cancel</button>
+      <button class="btn btn-gold" onclick="confirmAddPlayer()">Add to Game ♠</button>
+    </div>
+  </div>
+</div>
 <div class="mov" id="mod-edit">
   <div class="modal">
     <div class="modal-title">Edit Round</div>
@@ -977,22 +1002,27 @@ function getActive(){return G.players.filter(p=>!G.eliminated[p.abbr]);}
 
 function getCum(abbr){
   let s=0;
+  let started=!(G.midGameJoin&&G.midGameJoin[abbr]); // preexisting players start immediately
   for(const r of G.rounds){
+    if(r.joinFor===abbr){s=r.joinScore||0;started=true;continue;}
     if(r.reentryFor===abbr){s=G.reentryScore[abbr]||0;continue;}
+    if(!started)continue;
     if(r.scores&&r.scores[abbr]!==undefined)s+=r.scores[abbr];
   }
   return s;
 }
 
 function getTotalPot(){
-  const base=G.players.length*G.cfg.cash;
+  // Base = original players at setup (excludes mid-game joiners who pay via reentryCount)
+  const originalCount=G.players.filter(p=>!(G.midGameJoin&&G.midGameJoin[p.abbr])).length;
+  const base=originalCount*G.cfg.cash;
   const re=Object.values(G.reentryCount||{}).reduce((s,v)=>s+v,0);
   return base+re*G.cfg.cash;
 }
 
 function getRoundNum(ri){
   let n=0;
-  for(let i=0;i<=ri;i++){if(!G.rounds[i].reentryFor)n++;}
+  for(let i=0;i<=ri;i++){if(!G.rounds[i].reentryFor&&!G.rounds[i].joinFor)n++;}
   return n;
 }
 
@@ -1018,14 +1048,22 @@ function renderHeaderGame(){
   document.getElementById('hpills').innerHTML=
     G.players.map(p=>`<div class="hpill">${p.abbr}</div>`).join('')+
     `<div class="hpill pot">Pot: <b>$${pot}</b></div>`;
+
+  // Show Add Player button only when all active players have >= 1 drop
+  const cfg=G.cfg;
+  const active=getActive();
+  const allHaveDrop=active.length>=2&&active.every(q=>(cfg.final-1-getCum(q.abbr))>=cfg.drop);
+  const canAdd=allHaveDrop&&!G.gameOver&&G.players.length<12;
+
   document.getElementById('hacts').innerHTML=`
+    ${canAdd?`<button class="btn btn-green btn-sm" onclick="openAddPlayer()" title="Add a new player to the game">+ Player</button>`:''}
     <button class="btn btn-teal btn-sm" onclick="openSettle()">Settle</button>
     <button class="btn btn-red  btn-sm" onclick="endGame()">New Game</button>`;
 }
 
 /* ─── STATS BAR ─────────────────────────────────────── */
 function renderStatsBar(){
-  const n=G.rounds.filter(r=>!r.reentryFor).length;
+  const n=G.rounds.filter(r=>!r.reentryFor&&!r.joinFor).length;
   const pot=getTotalPot();
   document.getElementById('stats-bar').innerHTML=`
     <div class="spill">D:<b>${G.cfg.drop}</b></div>
@@ -1089,6 +1127,12 @@ function renderTable(){
     if(r.reentryFor){
       h+=`<tr class="rrow"><td colspan="${players.length+1}">
         ↩ Re-entry: ${r.reentryFor} rejoins — score reset to ${G.reentryScore[r.reentryFor]} · Pot +$${G.cfg.cash}
+      </td></tr>`;
+      return;
+    }
+    if(r.joinFor){
+      h+=`<tr class="rrow" style="background:rgba(246,201,14,.07);color:var(--gold)"><td colspan="${players.length+1}">
+        ♠ ${r.joinFor} joined mid-game at score ${r.joinScore} · Pot +$${G.cfg.cash}
       </td></tr>`;
       return;
     }
@@ -1462,10 +1506,10 @@ function afterRound(){
   if(active.length<=1)G.gameOver=true;
   renderAll();
   if(!G.gameOver&&active.length>=2){
-    const n=G.rounds.filter(r=>!r.reentryFor).length;
+    const n=G.rounds.filter(r=>!r.reentryFor&&!r.joinFor).length;
     toast(`Round ${n} saved!`,'gold');
     // Show Rummy winner celebration
-    const lastRound=G.rounds.filter(r=>!r.reentryFor).slice(-1)[0];
+    const lastRound=G.rounds.filter(r=>!r.reentryFor&&!r.joinFor).slice(-1)[0];
     if(lastRound){
       const rummyWinner=G.players.find(p=>lastRound.scores[p.abbr]===0);
       if(rummyWinner){
@@ -1627,10 +1671,13 @@ function computePayouts(){
   const inc      = cfg.cash;  // $25
   const SPLIT    = 5;         // $5
 
-  /* Contributions */
+  /* Contributions — original players paid cfg.cash at setup.
+     Mid-game joiners paid 0 at setup (not in original count) but pay via reentryCount. */
   const contrib={};
   players.forEach(p=>{
-    contrib[p.abbr]=cfg.cash+(G.reentryCount[p.abbr]||0)*cfg.cash;
+    const isMidJoin=!!(G.midGameJoin&&G.midGameJoin[p.abbr]);
+    const basePaid=isMidJoin?0:cfg.cash; // mid-game joiners didn't pay at setup
+    contrib[p.abbr]=basePaid+(G.reentryCount[p.abbr]||0)*cfg.cash;
   });
 
   /* Drops remaining — eliminated = 0 */
@@ -1719,7 +1766,7 @@ function getExpensesTotal(){
 /* ─── SUMMARY TAB ───────────────────────────────────── */
 function renderSettleSummary(){
   const{players,cfg}=G;
-  const rounds=G.rounds.filter(r=>!r.reentryFor).length;
+  const rounds=G.rounds.filter(r=>!r.reentryFor&&!r.joinFor).length;
   const pot=getTotalPot();
   const re=Object.values(G.reentryCount||{}).reduce((s,v)=>s+v,0);
   document.getElementById('settle-sub').textContent=
@@ -1896,11 +1943,92 @@ function recalcSettle(){
 
 function closeSettle(){document.getElementById('mod-settle').classList.remove('open');}
 
-/* ─── END GAME ──────────────────────────────────────── */
+/* ─── ADD PLAYER MID-GAME ───────────────────────────── */
+function openAddPlayer(){
+  const cfg=G.cfg;
+  const active=getActive();
+  const allHaveDrop=active.length>=2&&active.every(q=>(cfg.final-1-getCum(q.abbr))>=cfg.drop);
+  if(!allHaveDrop||G.gameOver||G.players.length>=12){
+    toast('Cannot add player right now','red');return;
+  }
+
+  // New player joins at highest active score
+  const maxScore=Math.max(...active.map(q=>getCum(q.abbr)));
+  document.getElementById('addplayer-sub').textContent=
+    `New player joins at score ${maxScore} — all active players have room`;
+  document.getElementById('addplayer-cost').textContent=cfg.cash;
+  hideErr('err-addplayer');
+  document.getElementById('addplayer-inp').value='';
+
+  // Populate preset chips — only names not already in the game
+  const usedNames=new Set(G.players.map(p=>p.name));
+  const presetAvail=PRESET.filter(n=>!usedNames.has(n));
+  const chipsWrap=document.getElementById('addplayer-chips');
+  chipsWrap.innerHTML=presetAvail.map(n=>
+    `<div class="pchip" id="apchip-${n}" onclick="selectAddChip('${n}')">${n}</div>`
+  ).join('')+(presetAvail.length===0?'<span style="font-size:12px;color:var(--text3)">All presets in use</span>':'');
+
+  document.getElementById('mod-addplayer').classList.add('open');
+}
+
+let selectedAddName=null;
+function selectAddChip(name){
+  selectedAddName=name;
+  document.getElementById('addplayer-inp').value='';
+  document.querySelectorAll('#addplayer-chips .pchip').forEach(c=>{
+    c.classList.toggle('active',c.id===`apchip-${name}`);
+  });
+  hideErr('err-addplayer');
+}
+
+function closeAddPlayer(){
+  selectedAddName=null;
+  document.getElementById('mod-addplayer').classList.remove('open');
+}
+
+function confirmAddPlayer(){
+  hideErr('err-addplayer');
+  const cfg=G.cfg;
+  const active=getActive();
+  const maxScore=active.length>0?Math.max(...active.map(q=>getCum(q.abbr))):0;
+
+  // Determine name: chip selection takes priority, then text input
+  const inputVal=document.getElementById('addplayer-inp').value.trim();
+  const rawName=inputVal||selectedAddName||'';
+  if(!rawName){showErr('err-addplayer','Select a preset or enter a name');return;}
+
+  // Check not already in game
+  if(G.players.find(p=>p.name===rawName)){
+    showErr('err-addplayer',`${rawName} is already in the game`);return;
+  }
+
+  // Generate abbr
+  const parts=rawName.split(/\s+/);
+  const ab=parts.length>=2?(parts[0][0]+parts[1][0]).toUpperCase():rawName.slice(0,2).toUpperCase();
+
+  // Assign color index
+  const ci=G.players.length%12;
+  const newPlayer={name:rawName,abbr:ab,ci};
+
+  // Add to game state
+  G.players.push(newPlayer);
+  // Set their starting score = maxScore via a reentry-style round marker
+  G.reentryScore[ab]=maxScore;
+  G.reentryCount[ab]=(G.reentryCount[ab]||0)+1; // pays into pot
+  G.midGameJoin=G.midGameJoin||{};
+  G.midGameJoin[ab]=true; // flag as mid-game joiner
+  // Push a join marker round so it shows in the table
+  G.rounds.push({scores:{},reentryFor:null,joinFor:ab,joinScore:maxScore});
+
+  closeAddPlayer();
+  toast(`${ab} joined the game at score ${maxScore}! Pot now $${getTotalPot()}`,'gold');
+  renderAll();
+}
+
 function endGame(){
   document.getElementById('mod-settle').classList.remove('open');
   selPlayers=[];G={};editingRoundIdx=null;pendingReentry=null;
-  reentryQueue=[];expenses=[];
+  reentryQueue=[];expenses=[];selectedAddName=null;
   document.querySelectorAll('.pchip').forEach(c=>c.classList.remove('active'));
   document.getElementById('sel-display').innerHTML=
     '<span style="font-size:12px;color:var(--text3)">None selected</span>';
