@@ -262,6 +262,26 @@ body::after{
   box-shadow:0 4px 24px rgba(240,192,96,.1);
 }
 
+/* Confirm round rows */
+.confirm-row{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:8px 12px;border-radius:var(--radius-sm);
+  background:var(--bg3);border:1px solid var(--bdr);margin-bottom:6px;
+}
+.confirm-row:last-child{margin-bottom:0;}
+.confirm-abbr{font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:700;}
+.confirm-score{font-family:'Fira Code',monospace;font-size:15px;font-weight:600;}
+.confirm-tag{font-size:10px;color:var(--text3);font-style:italic;margin-top:1px;}
+/* Fun stats */
+.fstat-row{
+  display:flex;align-items:center;gap:12px;
+  padding:10px 12px;border-radius:var(--radius-sm);
+  background:var(--bg3);border:1px solid var(--bdr);margin-bottom:8px;
+}
+.fstat-icon{font-size:22px;width:32px;text-align:center;flex-shrink:0;}
+.fstat-label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;font-family:'Fira Code',monospace;}
+.fstat-val{font-size:14px;font-weight:600;margin-top:2px;font-family:'Rajdhani',sans-serif;letter-spacing:.03em;}
+
 /* Rummy celebration banner */
 .rummy-celebrate{
   border-radius:var(--radius);padding:11px 18px;
@@ -444,12 +464,13 @@ table.mt tbody tr:hover td{background:rgba(240,192,96,.03);}
 
 /* Edit button */
 .ebtn{
-  font-size:9px;padding:2px 5px;border-radius:3px;
-  border:1px solid var(--bdr);cursor:pointer;
-  background:transparent;color:var(--text3);
-  transition:all .12s;margin-left:4px;
+  font-size:13px;padding:4px 9px;border-radius:5px;
+  border:1px solid var(--bdr2);cursor:pointer;
+  background:transparent;color:var(--text2);
+  transition:all .12s;margin-left:5px;
+  min-width:30px;display:inline-flex;align-items:center;justify-content:center;
 }
-.ebtn:hover{border-color:var(--amber);color:var(--amber);background:rgba(240,168,64,.08);}
+.ebtn:hover{border-color:var(--amber);color:var(--amber);background:rgba(240,168,64,.1);}
 
 /* Score state classes */
 .cv0{color:var(--green);font-weight:700;}
@@ -665,6 +686,92 @@ table.mt tbody tr:hover td{background:rgba(240,192,96,.03);}
 .pct4 {color:#901020;}.pct5 {color:#804000;}.pct6 {color:#0a5828;}.pct7 {color:#802060;}
 .pct8 {color:#104880;}.pct9 {color:#386000;}.pct10{color:#6a4400;}.pct11{color:#0a5070;}
 
+/* ═══ PIN SCREEN ═══ */
+.pin-overlay{
+  position:fixed;inset:0;z-index:9000;
+  background:var(--bg);
+  display:flex;align-items:center;justify-content:center;
+  padding:20px;
+}
+.pin-card{
+  background:var(--bg2);border:1px solid var(--bdr2);
+  border-radius:var(--radius);padding:36px 32px;
+  width:100%;max-width:360px;text-align:center;
+  box-shadow:0 8px 40px rgba(120,80,20,.15),inset 0 1px 0 rgba(255,255,255,.9);
+  position:relative;
+}
+.pin-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:3px;
+  background:linear-gradient(90deg,transparent,var(--gold),transparent);
+  border-radius:var(--radius) var(--radius) 0 0;opacity:.6;
+}
+.pin-logo{
+  font-family:'Playfair Display',serif;font-size:28px;
+  letter-spacing:.2em;color:var(--gold);margin-bottom:12px;
+}
+.pin-title{
+  font-family:'Playfair Display',serif;font-size:22px;font-weight:700;
+  color:var(--gold);margin-bottom:4px;
+}
+.pin-sub{font-size:13px;color:var(--text2);margin-bottom:24px;}
+.pin-dots{
+  display:flex;gap:16px;justify-content:center;margin-bottom:10px;
+}
+.pin-dot{
+  width:16px;height:16px;border-radius:50%;
+  border:2px solid var(--bdr2);background:transparent;
+  transition:all .15s;
+}
+.pin-dot.filled{background:var(--gold);border-color:var(--gold);}
+.pin-dot.shake{animation:pinShake .3s ease;}
+@keyframes pinShake{
+  0%,100%{transform:translateX(0);}
+  20%{transform:translateX(-6px);}
+  40%{transform:translateX(6px);}
+  60%{transform:translateX(-4px);}
+  80%{transform:translateX(4px);}
+}
+.pin-err{
+  height:18px;font-size:12px;color:var(--red);
+  margin-bottom:16px;font-weight:500;
+}
+.pin-pad{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:12px;
+  margin-bottom:20px;
+}
+.pin-btn{
+  font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:600;
+  padding:16px;border-radius:var(--radius-sm);
+  border:1px solid var(--bdr2);cursor:pointer;
+  background:var(--bg3);color:var(--text);
+  transition:all .12s;letter-spacing:.02em;
+  -webkit-tap-highlight-color:transparent;
+  user-select:none;
+}
+.pin-btn:hover{background:var(--bg4);border-color:var(--bdr3);}
+.pin-btn:active{transform:scale(.94);background:var(--bg5);}
+.pin-btn-clear{color:var(--red);font-size:18px;}
+.pin-btn-ok{
+  background:linear-gradient(135deg,#c88a00,#a06800);
+  color:#fff;border-color:var(--gold);font-size:18px;
+}
+.pin-btn-ok:hover{background:linear-gradient(135deg,#d89800,#b07800);}
+.pin-forgot{
+  background:none;border:none;cursor:pointer;
+  font-size:12px;color:var(--text3);text-decoration:underline;
+  font-family:'Inter',sans-serif;
+}
+.pin-forgot:hover{color:var(--red);}
+
+/* ═══ CHANGE PIN in header ═══ */
+.change-pin-btn{
+  font-size:11px;font-family:'Fira Code',monospace;
+  padding:3px 10px;border-radius:20px;
+  background:var(--bg3);border:1px solid var(--bdr2);
+  cursor:pointer;color:var(--text3);transition:all .12s;
+}
+.change-pin-btn:hover{border-color:var(--bdr3);color:var(--text2);}
+
 /* Scrollbar */
 ::-webkit-scrollbar{width:6px;height:6px;}
 ::-webkit-scrollbar-track{background:var(--bg3);}
@@ -673,6 +780,37 @@ table.mt tbody tr:hover td{background:rgba(240,192,96,.03);}
 </style>
 </head>
 <body>
+<!-- ═══════════ PIN SCREEN ═══════════ -->
+<div id="scr-pin" class="pin-overlay" style="display:none">
+  <div class="pin-card">
+    <div class="pin-logo">♠♥♦♣</div>
+    <div class="pin-title" id="pin-title">Welcome Back</div>
+    <div class="pin-sub" id="pin-sub">Enter your PIN to continue</div>
+    <div class="pin-dots" id="pin-dots">
+      <div class="pin-dot" id="pd0"></div>
+      <div class="pin-dot" id="pd1"></div>
+      <div class="pin-dot" id="pd2"></div>
+      <div class="pin-dot" id="pd3"></div>
+    </div>
+    <div class="pin-err" id="pin-err"></div>
+    <div class="pin-pad">
+      <button class="pin-btn" onclick="pinPress('1')">1</button>
+      <button class="pin-btn" onclick="pinPress('2')">2</button>
+      <button class="pin-btn" onclick="pinPress('3')">3</button>
+      <button class="pin-btn" onclick="pinPress('4')">4</button>
+      <button class="pin-btn" onclick="pinPress('5')">5</button>
+      <button class="pin-btn" onclick="pinPress('6')">6</button>
+      <button class="pin-btn" onclick="pinPress('7')">7</button>
+      <button class="pin-btn" onclick="pinPress('8')">8</button>
+      <button class="pin-btn" onclick="pinPress('9')">9</button>
+      <button class="pin-btn pin-btn-clear" onclick="pinClear()">⌫</button>
+      <button class="pin-btn" onclick="pinPress('0')">0</button>
+      <button class="pin-btn pin-btn-ok" onclick="pinSubmit()">✓</button>
+    </div>
+    <button class="pin-forgot" id="pin-forgot-btn" onclick="pinForgot()">Forgot PIN?</button>
+  </div>
+</div>
+
 <div class="app">
 <div id="toast" class="toast"></div>
 
@@ -784,6 +922,19 @@ table.mt tbody tr:hover td{background:rgba(240,192,96,.03);}
   </div>
 </div>
 
+<!-- ═══════════ CONFIRM ROUND MODAL ═══════════ -->
+<div class="mov" id="mod-confirm">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-title">Confirm Round Scores</div>
+    <div class="modal-sub" id="confirm-sub"></div>
+    <div id="confirm-body"></div>
+    <div class="mfoot">
+      <button class="btn" onclick="closeConfirm()">← Go Back</button>
+      <button class="btn btn-gold" onclick="commitRound()">Confirm &amp; Submit ✓</button>
+    </div>
+  </div>
+</div>
+
 <!-- ═══════════ ADD PLAYER MODAL ═══════════ -->
 <div class="mov" id="mod-addplayer">
   <div class="modal" style="max-width:420px">
@@ -834,6 +985,7 @@ table.mt tbody tr:hover td{background:rgba(240,192,96,.03);}
       <button class="stab" onclick="switchTab('tab-expenses')">Expenses</button>
       <button class="stab" onclick="switchTab('tab-payout')">Payout</button>
       <button class="stab" onclick="switchTab('tab-whopays')">Who Pays Whom</button>
+      <button class="stab" onclick="switchTab('tab-stats')">Fun Stats</button>
     </div>
 
     <!-- TAB: Summary -->
@@ -870,6 +1022,11 @@ table.mt tbody tr:hover td{background:rgba(240,192,96,.03);}
       <div id="pay-list"></div>
     </div>
 
+    <!-- TAB: Fun Stats -->
+    <div class="stab-panel" id="tab-stats">
+      <div id="fun-stats-body"></div>
+    </div>
+
     <div class="mfoot">
       <button class="btn"            onclick="closeSettle()">Back to Game</button>
       <button class="btn btn-teal btn-sm" onclick="recalcSettle()">↻ Recalculate</button>
@@ -902,6 +1059,7 @@ let pendingReentry=null;
 let reentryQueue=[];
 let editingRoundIdx=null;
 let expenses=[];
+let pendingScores=null;
 
 /* ─── SETUP ─────────────────────────────────────────── */
 function initSetup(){
@@ -1034,10 +1192,10 @@ function getRoundNum(ri){
 
 function cellClass(v,cfg){
   if(v===0)return'cv0';
-  if(v===cfg.drop)return'cv-d';
-  if(v===cfg.mid)return'cv-md';
-  if(v===cfg.ws)return'cv-ws';
+  if(v===cfg.drop&&v!==cfg.mid&&v!==cfg.full)return'cv-d';
+  if(v===cfg.mid&&v!==cfg.full)return'cv-md';
   if(v>=cfg.full)return'cv-fc';
+  if(v===cfg.ws&&cfg.ws!==cfg.full)return'cv-ws';
   return'';
 }
 
@@ -1146,7 +1304,7 @@ function renderTable(){
     }
     rNum++;
     h+=`<tr><td style="white-space:nowrap">R${rNum}
-      <button class="ebtn" onclick="openEdit(${ri})" title="Edit round ${rNum}">✎</button>
+      <button class="ebtn" onclick="openEdit(${ri})" title="Edit round ${rNum}">✏️</button>
     </td>`;
     players.forEach(p=>{
       const v=r.scores&&r.scores[p.abbr]!==undefined?r.scores[p.abbr]:null;
@@ -1238,10 +1396,14 @@ function renderTable(){
 }
 
 /* ─── QUICK ENTRY ───────────────────────────────────── */
+// Tracks which quick button was last pressed per player abbr
+const scoreTypeMap={};
+
 function setQ(abbr,type){
   const inp=document.getElementById('inp-'+abbr);if(!inp)return;
   inp.value={D:G.cfg.drop,MD:G.cfg.mid,FC:G.cfg.full,WS:G.cfg.ws,R:0}[type];
   inp.classList.remove('ierr');
+  scoreTypeMap[abbr]=type; // remember which button was pressed
   const fl=document.getElementById('fl-'+abbr);
   if(fl){
     fl.textContent=FUNNY[type][Math.floor(Math.random()*FUNNY[type].length)];
@@ -1253,6 +1415,7 @@ function setQ(abbr,type){
 function onScoreInput(abbr,inp){
   inp.classList.remove('ierr');
   hideErr('err-round');
+  delete scoreTypeMap[abbr]; // manual entry — no type assigned
   updateRummyIndicator();
 }
 
@@ -1308,7 +1471,8 @@ function updateRummyIndicator(){
   }
 }
 
-/* ─── SUBMIT ROUND ──────────────────────────────────── */
+/* ─── SUBMIT ROUND — show confirm first ─────────────── */
+
 function submitRound(){
   hideErr('err-round');
   const active=getActive();
@@ -1340,11 +1504,65 @@ function submitRound(){
   if(zeroCount===0){showErr('err-round','Every round must have exactly one Rummy (R=0). No Rummy selected!');return;}
   if(zeroCount>1){showErr('err-round','Only one player can score 0 (Rummy) per round!');return;}
 
-  // Clear reinstate eligibility — once a new round is committed, no more reinstate
+  // All valid — show confirm modal
+  pendingScores=scores;
+  const rNum=G.rounds.filter(r=>!r.reentryFor&&!r.joinFor).length+1;
+  document.getElementById('confirm-sub').textContent=
+    `Round ${rNum} — please verify before committing`;
+
+  let h='';
+  active.forEach(p=>{
+    const v=scores[p.abbr];
+    const cfg=G.cfg;
+    const qtype=scoreTypeMap[p.abbr]; // which button was pressed (if any)
+    let scoreColor='var(--text)';
+    let tag='';
+    // Use explicit button type if available, else infer from value
+    const effectiveType=qtype||(
+      v===0?'R':
+      v===cfg.drop&&v!==cfg.mid&&v!==cfg.full?'D':
+      v===cfg.mid&&v!==cfg.full?'MD':
+      v>=cfg.full?'FC':
+      v===cfg.ws&&cfg.ws!==cfg.full?'WS':'MANUAL'
+    );
+    if(effectiveType==='R')  {scoreColor='var(--green)'; tag='🏆 RUMMY!';}
+    else if(effectiveType==='D')  {scoreColor='var(--text2)'; tag='Drop';}
+    else if(effectiveType==='MD') {scoreColor='var(--amber)'; tag='Mid drop';}
+    else if(effectiveType==='FC') {scoreColor='var(--red)';   tag='Full count';}
+    else if(effectiveType==='WS') {scoreColor='var(--purple)';tag='Wrong Show';}
+    h+=`<div class="confirm-row">
+      <div>
+        <div class="confirm-abbr pct${p.ci}">${p.abbr}
+          <span style="font-size:11px;font-weight:400;color:var(--text2);font-family:'Inter',sans-serif"> ${p.name!==p.abbr?p.name:''}</span>
+        </div>
+        ${tag?`<div class="confirm-tag">${tag}</div>`:''}
+      </div>
+      <div class="confirm-score" style="color:${scoreColor}">${v}</div>
+    </div>`;
+  });
+  document.getElementById('confirm-body').innerHTML=h;
+  document.getElementById('mod-confirm').classList.add('open');
+}
+
+function closeConfirm(){
+  pendingScores=null;
+  document.getElementById('mod-confirm').classList.remove('open');
+}
+
+function commitRound(){
+  if(!pendingScores)return;
+  const scores=pendingScores;
+  pendingScores=null;
+  document.getElementById('mod-confirm').classList.remove('open');
+
+  // Clear reinstate eligibility and score type tracking
   G.declinedReentry={};
+  Object.keys(scoreTypeMap).forEach(k=>delete scoreTypeMap[k]);
   G.rounds.push({scores,reentryFor:null});
 
   /* Check who crossed the out limit */
+  const active=getActive();
+  const cfg=G.cfg;
   const crossed=[];
   for(const p of active){
     const cum=getCum(p.abbr);
@@ -1516,9 +1734,15 @@ function afterRound(){
   renderAll();
   if(!G.gameOver&&active.length>=2){
     const n=G.rounds.filter(r=>!r.reentryFor&&!r.joinFor).length;
-    toast(`Round ${n} saved!`,'gold');
-    // Show Rummy winner celebration
+    // Last round summary toast
     const lastRound=G.rounds.filter(r=>!r.reentryFor&&!r.joinFor).slice(-1)[0];
+    if(lastRound){
+      const summary=Object.entries(lastRound.scores)
+        .map(([ab,v])=>`${ab}:${v===0?'R':v}`)
+        .join(' · ');
+      toast(`R${n} ✓  ${summary}`,'gold');
+    }
+    // Rummy winner celebration
     if(lastRound){
       const rummyWinner=G.players.find(p=>lastRound.scores[p.abbr]===0);
       if(rummyWinner){
@@ -1656,10 +1880,11 @@ function openSettle(){
 }
 
 function switchTab(id){
-  const tabs=['tab-summary','tab-expenses','tab-payout','tab-whopays'];
+  const tabs=['tab-summary','tab-expenses','tab-payout','tab-whopays','tab-stats'];
   document.querySelectorAll('.stab').forEach((b,i)=>b.classList.toggle('active',tabs[i]===id));
   document.querySelectorAll('.stab-panel').forEach(p=>p.classList.toggle('active',p.id===id));
   if(id==='tab-payout'||id==='tab-whopays')renderPayoutTabs();
+  if(id==='tab-stats')renderFunStats();
 }
 
 /* ─── PAYOUT CALCULATION ────────────────────────────── */
@@ -1955,8 +2180,102 @@ function renderPayoutTabs(){
 function recalcSettle(){
   renderSettleSummary();
   renderPayoutTabs();
+  renderFunStats();
   updateExpTotals();
   toast('Recalculated!','teal');
+}
+
+/* ─── FUN STATS ─────────────────────────────────────── */
+function renderFunStats(){
+  const{players,cfg}=G;
+  const scoredRounds=G.rounds.filter(r=>!r.reentryFor&&!r.joinFor);
+  if(scoredRounds.length===0){
+    document.getElementById('fun-stats-body').innerHTML=
+      `<div style="color:var(--text3);font-size:13px;padding:20px 0;text-align:center">No rounds played yet</div>`;
+    return;
+  }
+
+  // Most Rummys
+  const rummyCounts={};
+  players.forEach(p=>{rummyCounts[p.abbr]=0;});
+  scoredRounds.forEach(r=>{
+    players.forEach(p=>{if(r.scores[p.abbr]===0)rummyCounts[p.abbr]++;});
+  });
+  const rummyKing=players.reduce((a,b)=>rummyCounts[a.abbr]>=rummyCounts[b.abbr]?a:b);
+
+  // Most Full Counts
+  const fcCounts={};
+  players.forEach(p=>{fcCounts[p.abbr]=0;});
+  scoredRounds.forEach(r=>{
+    players.forEach(p=>{if(r.scores[p.abbr]>=cfg.full)fcCounts[p.abbr]++;});
+  });
+  const fcKing=players.reduce((a,b)=>fcCounts[a.abbr]>=fcCounts[b.abbr]?a:b);
+
+  // Most Wrong Shows
+  const wsCounts={};
+  players.forEach(p=>{wsCounts[p.abbr]=0;});
+  scoredRounds.forEach(r=>{
+    players.forEach(p=>{if(r.scores[p.abbr]===cfg.ws&&cfg.ws!==cfg.full)wsCounts[p.abbr]++;});
+  });
+  const wsKing=players.reduce((a,b)=>wsCounts[a.abbr]>=wsCounts[b.abbr]?a:b);
+
+  // Highest single round score
+  let highScore=0,highPlayer=players[0],highRound=1;
+  scoredRounds.forEach((r,ri)=>{
+    players.forEach(p=>{
+      const v=r.scores[p.abbr];
+      if(v!==undefined&&v>highScore){highScore=v;highPlayer=p;highRound=ri+1;}
+    });
+  });
+
+  // Lowest single round score (non-zero)
+  let lowScore=999,lowPlayer=players[0],lowRound=1;
+  scoredRounds.forEach((r,ri)=>{
+    players.forEach(p=>{
+      const v=r.scores[p.abbr];
+      if(v!==undefined&&v>0&&v<lowScore){lowScore=v;lowPlayer=p;lowRound=ri+1;}
+    });
+  });
+
+  // Closest escape (active player with fewest pts before bust)
+  const active=getActive();
+  let closestPlayer=null,closestRem=9999;
+  active.forEach(p=>{
+    const rem=cfg.final-1-getCum(p.abbr);
+    if(rem<closestRem){closestRem=rem;closestPlayer=p;}
+  });
+
+  // Average score per round per player
+  const avgScores={};
+  players.forEach(p=>{
+    const rounds=scoredRounds.filter(r=>r.scores[p.abbr]!==undefined);
+    avgScores[p.abbr]=rounds.length?Math.round(rounds.reduce((s,r)=>s+r.scores[p.abbr],0)/rounds.length):0;
+  });
+  const mostConsistent=players.reduce((a,b)=>avgScores[a.abbr]<=avgScores[b.abbr]?a:b);
+
+  const stats=[
+    {icon:'👑',label:'Rummy King',val:`${rummyKing.abbr} — ${rummyCounts[rummyKing.abbr]} Rummy${rummyCounts[rummyKing.abbr]!==1?'s':''}`,color:`pct${rummyKing.ci}`},
+    {icon:'💀',label:'Full Count Champion',val:`${fcKing.abbr} — ${fcCounts[fcKing.abbr]} full count${fcCounts[fcKing.abbr]!==1?'s':''}`,color:`pct${fcKing.ci}`},
+    {icon:'🎯',label:'Highest Single Round',val:`${highPlayer.abbr} scored ${highScore} in R${highRound}`,color:`pct${highPlayer.ci}`},
+    {icon:'🍀',label:'Best Single Round',val:`${lowPlayer.abbr} scored ${lowScore} in R${lowRound}`,color:`pct${lowPlayer.ci}`},
+    {icon:'📊',label:'Most Consistent',val:`${mostConsistent.abbr} — avg ${avgScores[mostConsistent.abbr]} per round`,color:`pct${mostConsistent.ci}`},
+  ];
+  if(closestPlayer){
+    stats.push({icon:'😰',label:'Closest to Bust',val:`${closestPlayer.abbr} — only ${closestRem} pts left`,color:`pct${closestPlayer.ci}`});
+  }
+  if(Object.values(wsCounts).some(v=>v>0)){
+    stats.push({icon:'🤦',label:'Wrong Show Award',val:`${wsKing.abbr} — ${wsCounts[wsKing.abbr]} wrong show${wsCounts[wsKing.abbr]!==1?'s':''}`,color:`pct${wsKing.ci}`});
+  }
+
+  const h=stats.map(s=>`
+    <div class="fstat-row">
+      <div class="fstat-icon">${s.icon}</div>
+      <div style="flex:1">
+        <div class="fstat-label">${s.label}</div>
+        <div class="fstat-val ${s.color}">${s.val}</div>
+      </div>
+    </div>`).join('');
+  document.getElementById('fun-stats-body').innerHTML=h;
 }
 
 function closeSettle(){document.getElementById('mod-settle').classList.remove('open');}
@@ -2046,7 +2365,7 @@ function confirmAddPlayer(){
 function endGame(){
   document.getElementById('mod-settle').classList.remove('open');
   selPlayers=[];G={};editingRoundIdx=null;pendingReentry=null;
-  reentryQueue=[];expenses=[];selectedAddName=null;
+  reentryQueue=[];expenses=[];selectedAddName=null;pendingScores=null;
   document.querySelectorAll('.pchip').forEach(c=>c.classList.remove('active'));
   document.getElementById('sel-display').innerHTML=
     '<span style="font-size:12px;color:var(--text3)">None selected</span>';
@@ -2069,7 +2388,78 @@ function showErr(id,msg){const e=document.getElementById(id);if(msg)e.textConten
 function hideErr(id){document.getElementById(id).classList.remove('show');}
 
 /* ─── BOOT ──────────────────────────────────────────── */
-initSetup();
+/* ─── PIN SYSTEM ────────────────────────────────────── */
+const HARDCODED_PIN='1206';
+let pinBuffer='';
+
+function pinInit(){
+  showPinScreen('unlock');
+}
+
+function showPinScreen(mode){
+  pinBuffer='';
+  const overlay=document.getElementById('scr-pin');
+  overlay.style.display='flex';
+  clearPinDots();
+  document.getElementById('pin-err').textContent='';
+  document.getElementById('pin-title').textContent='Welcome Back';
+  document.getElementById('pin-sub').textContent='Enter PIN to continue';
+  document.getElementById('pin-forgot-btn').style.display='none';
+}
+
+function hidePinScreen(){
+  document.getElementById('scr-pin').style.display='none';
+}
+
+function pinPress(digit){
+  if(pinBuffer.length>=4)return;
+  pinBuffer+=digit;
+  updatePinDots();
+  document.getElementById('pin-err').textContent='';
+  if(pinBuffer.length===4)setTimeout(pinSubmit,120);
+}
+
+function pinClear(){
+  if(!pinBuffer.length)return;
+  pinBuffer=pinBuffer.slice(0,-1);
+  updatePinDots();
+}
+
+function updatePinDots(){
+  for(let i=0;i<4;i++){
+    document.getElementById('pd'+i).classList.toggle('filled',i<pinBuffer.length);
+  }
+}
+
+function clearPinDots(){
+  pinBuffer='';
+  for(let i=0;i<4;i++)document.getElementById('pd'+i).classList.remove('filled');
+}
+
+function pinShakeError(msg){
+  document.getElementById('pin-err').textContent=msg;
+  const dots=document.querySelectorAll('.pin-dot');
+  dots.forEach(d=>d.classList.add('shake'));
+  setTimeout(()=>{dots.forEach(d=>d.classList.remove('shake'));clearPinDots();},350);
+}
+
+function pinSubmit(){
+  if(pinBuffer.length<4){
+    document.getElementById('pin-err').textContent='Enter all 4 digits';return;
+  }
+  if(pinBuffer===HARDCODED_PIN){
+    hidePinScreen();
+    initSetup();
+  } else {
+    pinShakeError('Incorrect PIN — try again');
+  }
+}
+
+function pinForgot(){}
+function openChangePIN(){}
+
+// ─── Kick off ───────────────────────────────────────
+pinInit();
 if('serviceWorker' in navigator && location.protocol !== 'file:'){
   // Inline service worker as a blob so no separate sw.js file is needed
   const swCode=`
