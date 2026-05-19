@@ -1269,7 +1269,7 @@ function renderTable(){
     h+=`<th><div class="thi">
       <div class="th-abbr pct${p.ci}">${p.abbr}
         ${isOut?`<span class="obadge">OUT</span>`:''}
-        ${hasRE&&!isOut?`<span class="rbadge">RE</span>`:''}
+        ${hasRE&&!isOut?`<span class="rbadge">RE×${G.reentryCount[p.abbr]||1}</span>`:''}
       </div>
       <div class="th-name">${p.name!==p.abbr?p.name:''}</div>
       <div class="th-cum ${cc}">${cum}</div>
@@ -1567,8 +1567,7 @@ function commitRound(){
   for(const p of active){
     const cum=getCum(p.abbr);
     if(cum>=cfg.final){
-      if(!G.reentry[p.abbr])crossed.push(p);
-      else{G.eliminated[p.abbr]=true;toast(`${p.abbr} is OUT! 💀`,'red');}
+      crossed.push(p); // always eligible to attempt re-entry — no limit
     }
   }
   if(crossed.length>0){reentryQueue=[...crossed];processReentry(0);return;}
@@ -1616,7 +1615,7 @@ function processReentry(idx){
   let html=`<div class="reinfo">
     <strong>${player.abbr}</strong> crossed the out limit with score <strong>${cum}</strong>.<br><br>`;
   if(canReenter){
-    html+=`Eligible for <strong>one re-entry</strong>.
+    html+=`Re-entry permitted.
       Score will reset to <strong>${maxScore}</strong> (highest among remaining players).<br><br>
       ⓘ Re-entry adds <strong>$${cfg.cash}</strong> to the pot
       (new pot: $${getTotalPot()+cfg.cash}).<br><br>
@@ -1853,15 +1852,12 @@ function saveEdit(){
 }
 
 function recomputeState(){
-  G.eliminated={};G.reentry={};G.reentryScore={};G.gameOver=false;
-  /* Preserve reentry scores already stored */
+  G.reentry={};G.reentryScore={};G.gameOver=false;
+  // Keep eliminated as-is (set explicitly by declineReentry, not re-derived)
+  // Rebuild reentry flags from round history
   const saved=Object.assign({},G.reentryScore);
   G.rounds.forEach(r=>{if(r.reentryFor){G.reentry[r.reentryFor]=true;}});
   Object.assign(G.reentryScore,saved);
-  const cfg=G.cfg;
-  for(const p of G.players){
-    if(getCum(p.abbr)>=cfg.final&&G.reentry[p.abbr])G.eliminated[p.abbr]=true;
-  }
   if(getActive().length<=1)G.gameOver=true;
 }
 
@@ -1938,29 +1934,29 @@ function computePayouts(){
   const minDrops=activePlayers.length>0?Math.min(...activePlayers.map(p=>drops[p.abbr])):0;
   const aboveMin=activePlayers.filter(p=>drops[p.abbr]>minDrops)
     .sort((a,b)=>drops[b.abbr]-drops[a.abbr]||getCum(a.abbr)-getCum(b.abbr));
-  const secondMin=aboveMin.length>0?Math.min(...aboveMin.map(p=>drops[p.abbr])):minDrops;
 
-  /* Step 2: award $inc per extra drop above secondMin (only for aboveMin players) */
+  /* Step 2: award $inc per extra drop above minDrops (only for aboveMin players)
+     e.g. KR=1D, K1=0D → minDrops=0 → KR gets 1×$25 extra */
   if(remaining>0&&aboveMin.length>0){
     aboveMin.forEach(p=>{
-      const extra=(drops[p.abbr]-secondMin)*inc;
+      const extra=(drops[p.abbr]-minDrops)*inc;
       const award=Math.min(extra,remaining);
       share[p.abbr]+=award;
       remaining-=award;
     });
   }
 
-  /* Step 3: split remaining equally among aboveMin players in $inc chunks */
-  if(remaining>0&&aboveMin.length>0){
-    const eqC=Math.floor(remaining/(inc*aboveMin.length));
+  /* Step 3: split remaining equally among ALL active players in $inc chunks */
+  if(remaining>0&&activePlayers.length>0){
+    const eqC=Math.floor(remaining/(inc*activePlayers.length));
     if(eqC>0){
-      aboveMin.forEach(p=>{share[p.abbr]+=eqC*inc;});
-      remaining-=eqC*inc*aboveMin.length;
+      activePlayers.forEach(p=>{share[p.abbr]+=eqC*inc;});
+      remaining-=eqC*inc*activePlayers.length;
     }
   }
 
-  /* Step 4: $5 chunks equally among aboveMin, lowest score priority */
-  const splitPool=aboveMin.length>0?aboveMin:activePlayers;
+  /* Step 4: $5 chunks equally among all active players, lowest score priority */
+  const splitPool=activePlayers;
   if(remaining>0.001&&splitPool.length>0){
     const fiveChunks=Math.floor(remaining/SPLIT);
     const subFive=remaining-fiveChunks*SPLIT;
