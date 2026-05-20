@@ -772,6 +772,42 @@ table.mt tbody tr:hover td{background:rgba(240,192,96,.03);}
 }
 .change-pin-btn:hover{border-color:var(--bdr3);color:var(--text2);}
 
+/* Session history */
+.session-card{
+  background:var(--bg3);border:1px solid var(--bdr2);
+  border-radius:var(--radius-sm);padding:12px 14px;
+  margin-bottom:8px;cursor:pointer;transition:all .15s;
+  display:flex;align-items:flex-start;gap:12px;
+}
+.session-card:hover{border-color:var(--bdr3);}
+.session-card.selected{
+  border-color:var(--teal);
+  background:rgba(0,122,104,.06);
+}
+.session-cb{
+  width:18px;height:18px;border-radius:4px;
+  border:2px solid var(--bdr2);background:var(--bg);
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;margin-top:2px;font-size:11px;
+  transition:all .12s;
+}
+.session-card.selected .session-cb{
+  background:var(--teal);border-color:var(--teal);color:#fff;
+}
+.session-meta{font-size:11px;color:var(--text3);margin-top:3px;font-family:'Fira Code',monospace;}
+.session-players{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;}
+.session-ptag{
+  font-size:11px;font-family:'Fira Code',monospace;
+  padding:2px 8px;border-radius:12px;border:1px solid;
+}
+.snet-pos{color:var(--green);font-weight:600;}
+.snet-neg{color:var(--red);font-weight:600;}
+.snet-zero{color:var(--text2);}
+.no-sessions{
+  text-align:center;padding:32px 20px;color:var(--text3);
+  font-size:13px;line-height:1.7;
+}
+
 /* Scrollbar */
 ::-webkit-scrollbar{width:6px;height:6px;}
 ::-webkit-scrollbar-track{background:var(--bg3);}
@@ -780,6 +816,32 @@ table.mt tbody tr:hover td{background:rgba(240,192,96,.03);}
 </style>
 </head>
 <body>
+<!-- ═══════════ MULTI-SESSION MODAL ═══════════ -->
+<div class="mov" id="mod-sessions">
+  <div class="modal" style="max-width:680px">
+    <div class="modal-title">Session History & Combined Settlement</div>
+    <div class="modal-sub">Select sessions to combine. Players are matched by abbreviation across sessions.</div>
+
+    <div id="session-list-wrap"></div>
+
+    <div id="combined-settle-wrap" style="display:none">
+      <div style="height:1px;background:var(--bdr2);margin:16px 0"></div>
+      <div style="font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--teal);margin-bottom:12px">Combined Net Balances</div>
+      <div id="combined-rankings"></div>
+      <div style="height:1px;background:var(--bdr2);margin:16px 0"></div>
+      <div style="font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--teal);margin-bottom:8px">Who Pays Whom (Combined)</div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:10px">Minimum transactions to settle all selected sessions at once.</div>
+      <div id="combined-pay-list"></div>
+    </div>
+
+    <div class="mfoot">
+      <button class="btn" onclick="closeSessions()">Close</button>
+      <button class="btn btn-red btn-sm" onclick="clearAllSessions()" style="margin-right:auto">🗑 Clear History</button>
+      <button class="btn btn-gold" onclick="computeCombined()">Combine Selected ✓</button>
+    </div>
+  </div>
+</div>
+
 <!-- ═══════════ PIN SCREEN ═══════════ -->
 <div id="scr-pin" class="pin-overlay" style="display:none">
   <div class="pin-card">
@@ -870,7 +932,9 @@ table.mt tbody tr:hover td{background:rgba(240,192,96,.03);}
       <div class="err" id="err-cfg">All values must be positive numbers</div>
     </div>
 
-    <div class="setup-foot">
+    <div class="setup-foot" style="justify-content:space-between">
+      <button class="btn btn-sm" onclick="openSessions()" id="btn-past-sessions"
+        style="font-size:12px">📋 Past Sessions</button>
       <button class="btn btn-gold" onclick="startGame()"
         style="font-size:15px;padding:11px 30px;letter-spacing:.08em;">
         DEAL THE CARDS ♠
@@ -2358,7 +2422,173 @@ function confirmAddPlayer(){
   renderAll();
 }
 
+/* ─── MULTI-SESSION SYSTEM ──────────────────────────── */
+const SESSIONS_KEY='rummy_sessions_v1';
+let selectedSessionIds=new Set();
+
+function loadSessions(){
+  try{return JSON.parse(localStorage.getItem(SESSIONS_KEY)||'[]');}
+  catch{return[];}
+}
+function saveSessions(sessions){
+  localStorage.setItem(SESSIONS_KEY,JSON.stringify(sessions));
+}
+
+function saveCurrentSession(){
+  const res=computePayouts();
+  const{players,cfg}=G;
+  const rounds=G.rounds.filter(r=>!r.reentryFor&&!r.joinFor).length;
+  const pot=getTotalPot();
+  const playerData=players.map(p=>({
+    abbr:p.abbr,name:p.name,ci:p.ci,
+    net:Math.round(res.net[p.abbr]*100)/100,
+    receives:Math.round(res.receive[p.abbr]*100)/100,
+    contrib:res.contrib[p.abbr],
+    score:getCum(p.abbr),isOut:!!G.eliminated[p.abbr]
+  }));
+  const session={
+    id:Date.now(),
+    date:new Date().toLocaleString('en-IN',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}),
+    rounds,pot,expTotal:res.expTotal,players:playerData,
+    cfg:{cash:cfg.cash,drop:cfg.drop,final:cfg.final}
+  };
+  const sessions=loadSessions();
+  sessions.unshift(session);
+  if(sessions.length>30)sessions.splice(30);
+  saveSessions(sessions);
+  return session;
+}
+
+function openSessions(){
+  selectedSessionIds=new Set();
+  document.getElementById('combined-settle-wrap').style.display='none';
+  renderSessionList();
+  document.getElementById('mod-sessions').classList.add('open');
+}
+function closeSessions(){document.getElementById('mod-sessions').classList.remove('open');}
+
+function renderSessionList(){
+  const sessions=loadSessions();
+  const wrap=document.getElementById('session-list-wrap');
+  if(sessions.length===0){
+    wrap.innerHTML=`<div class="no-sessions">
+      No saved sessions yet.<br>
+      Complete a game and click <b>End &amp; New Session</b> to save it here.
+    </div>`;return;
+  }
+  let h=`<div style="font-size:11px;color:var(--text3);margin-bottom:10px">
+    ${sessions.length} session${sessions.length!==1?'s':''} saved · Tap to select for combined settlement
+  </div>`;
+  sessions.forEach(s=>{
+    const isSel=selectedSessionIds.has(s.id);
+    h+=`<div class="session-card${isSel?' selected':''}" onclick="toggleSession(${s.id})">
+      <div class="session-cb">${isSel?'✓':''}</div>
+      <div style="flex:1">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <span style="font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:600;color:var(--text)">${s.date}</span>
+          <span class="session-meta">${s.rounds} rounds · $${s.pot} pot · ${s.players.length} players</span>
+        </div>
+        <div class="session-players">
+          ${s.players.map(p=>{
+            const nc=p.net>0?'snet-pos':p.net<0?'snet-neg':'snet-zero';
+            return `<span class="session-ptag pc${p.ci}">${p.abbr} <span class="${nc}">${p.net>=0?'+':''}$${p.net.toFixed(0)}</span></span>`;
+          }).join('')}
+        </div>
+      </div>
+    </div>`;
+  });
+  wrap.innerHTML=h;
+}
+
+function toggleSession(id){
+  if(selectedSessionIds.has(id))selectedSessionIds.delete(id);
+  else selectedSessionIds.add(id);
+  renderSessionList();
+  document.getElementById('combined-settle-wrap').style.display='none';
+}
+
+function computeCombined(){
+  if(selectedSessionIds.size===0){toast('Select at least one session','red');return;}
+  const sessions=loadSessions().filter(s=>selectedSessionIds.has(s.id));
+  // Aggregate net per player abbr
+  const netMap={},nameMap={},ciMap={},sessionCount={};
+  sessions.forEach(s=>{
+    s.players.forEach(p=>{
+      if(!netMap[p.abbr])netMap[p.abbr]=0;
+      netMap[p.abbr]+=p.net;
+      nameMap[p.abbr]=p.name;
+      ciMap[p.abbr]=p.ci;
+      sessionCount[p.abbr]=(sessionCount[p.abbr]||0)+1;
+    });
+  });
+  const players=Object.keys(netMap)
+    .map(abbr=>({abbr,name:nameMap[abbr],ci:ciMap[abbr],net:Math.round(netMap[abbr]*100)/100,sessions:sessionCount[abbr]}))
+    .sort((a,b)=>b.net-a.net);
+
+  // Combined rankings
+  let rh='';
+  players.forEach((p,i)=>{
+    const medal=i===0?'🥇':i===1?'🥈':i===2?'🥉':`${i+1}.`;
+    const nc=p.net>0?'mp':p.net<0?'mn':'mz';
+    rh+=`<div class="srow">
+      <div class="srank">${medal}</div>
+      <div class="savt pc${p.ci}">${p.abbr}</div>
+      <div style="flex:1">
+        <div class="sname pct${p.ci}">${p.name}</div>
+        <div class="ssub">${p.sessions} session${p.sessions!==1?'s':''}</div>
+      </div>
+      <div class="snet ${nc}">${p.net>=0?'+':''}$${p.net.toFixed(2)}</div>
+    </div>`;
+  });
+  document.getElementById('combined-rankings').innerHTML=rh;
+
+  // Who pays whom
+  const balances={};
+  players.forEach(p=>{balances[p.abbr]=p.net;});
+  const txns=[];let safety=0;
+  while(safety++<200){
+    const cred=players.filter(p=>balances[p.abbr]>0.005).sort((a,b)=>balances[b.abbr]-balances[a.abbr]);
+    const debt=players.filter(p=>balances[p.abbr]<-0.005).sort((a,b)=>balances[a.abbr]-balances[b.abbr]);
+    if(!cred.length||!debt.length)break;
+    const cr=cred[0],db=debt[0];
+    const amt=Math.round(Math.min(balances[cr.abbr],Math.abs(balances[db.abbr]))*100)/100;
+    if(amt<0.005)break;
+    txns.push({from:db,to:cr,amount:amt});
+    balances[cr.abbr]=Math.round((balances[cr.abbr]-amt)*100)/100;
+    balances[db.abbr]=Math.round((balances[db.abbr]+amt)*100)/100;
+  }
+  let ph=txns.length===0
+    ?`<div style="text-align:center;color:var(--text3);font-size:13px;padding:16px 0">🎉 All square across sessions!</div>`
+    :txns.map(t=>`<div class="pay-row">
+        <div class="pay-avt pc${t.from.ci}">${t.from.abbr}</div>
+        <div class="pay-name pct${t.from.ci}">${t.from.abbr}</div>
+        <div class="pay-arrow">→</div>
+        <div class="pay-name pct${t.to.ci}">${t.to.abbr}</div>
+        <div class="pay-avt pc${t.to.ci}">${t.to.abbr}</div>
+        <div class="pay-desc">${t.from.name} pays ${t.to.name}</div>
+        <div class="pay-amt">$${t.amount.toFixed(2)}</div>
+      </div>`).join('');
+  document.getElementById('combined-pay-list').innerHTML=ph;
+  document.getElementById('combined-settle-wrap').style.display='block';
+  document.getElementById('combined-settle-wrap').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+function clearAllSessions(){
+  if(confirm('Delete all saved session history? This cannot be undone.')){
+    localStorage.removeItem(SESSIONS_KEY);
+    selectedSessionIds=new Set();
+    document.getElementById('combined-settle-wrap').style.display='none';
+    renderSessionList();
+    toast('Session history cleared','amber');
+  }
+}
+
 function endGame(){
+  // Save session before clearing
+  if(G&&G.players&&G.players.length&&G.rounds&&G.rounds.filter(r=>!r.reentryFor&&!r.joinFor).length>0){
+    saveCurrentSession();
+    toast('Session saved to history ✓','teal');
+  }
   document.getElementById('mod-settle').classList.remove('open');
   selPlayers=[];G={};editingRoundIdx=null;pendingReentry=null;
   reentryQueue=[];expenses=[];selectedAddName=null;pendingScores=null;
