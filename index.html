@@ -808,6 +808,35 @@ table.mt tbody tr:hover td{background:rgba(240,192,96,.03);}
   font-size:13px;line-height:1.7;
 }
 
+/* ═══ GAME MODE SELECTOR ═══ */
+.mode-card{
+  background:var(--bg2);border:1.5px solid var(--bdr2);
+  border-radius:var(--radius);padding:22px 18px;cursor:pointer;
+  transition:all .18s;text-align:center;
+  display:flex;flex-direction:column;align-items:center;gap:8px;
+}
+.mode-card:hover{border-color:var(--gold);background:rgba(200,150,10,.05);transform:translateY(-2px);box-shadow:0 6px 20px rgba(120,80,20,.12);}
+.mode-icon{font-size:40px;line-height:1;}
+.mode-title{font-family:'Playfair Display',serif;font-size:17px;font-weight:700;color:var(--gold);}
+.mode-desc{font-size:11px;color:var(--text2);line-height:1.55;text-align:center;}
+.mode-tag{
+  font-size:10px;padding:2px 10px;border-radius:12px;
+  background:rgba(200,150,10,.12);color:var(--gold);
+  border:1px solid rgba(200,150,10,.3);font-family:'Fira Code',monospace;
+  letter-spacing:.04em;margin-top:4px;
+}
+
+/* ═══ STAKE GAME ═══ */
+.sk-bank-pos{color:var(--green);font-weight:700;}
+.sk-bank-neg{color:var(--red);font-weight:700;}
+.sk-bank-zero{color:var(--text2);}
+.sk-left-badge{
+  display:inline-block;font-size:8px;
+  background:rgba(255,173,66,.18);color:var(--amber);
+  border:1px solid rgba(255,173,66,.3);
+  padding:1px 4px;border-radius:3px;margin-left:3px;vertical-align:middle;
+}
+
 /* Scrollbar */
 ::-webkit-scrollbar{width:6px;height:6px;}
 ::-webkit-scrollbar-track{background:var(--bg3);}
@@ -842,7 +871,154 @@ table.mt tbody tr:hover td{background:rgba(240,192,96,.03);}
   </div>
 </div>
 
-<!-- ═══════════ PIN SCREEN ═══════════ -->
+<!-- ═══════════ GAME MODE SELECTOR ═══════════ -->
+<div class="mov" id="mod-gamemode" style="background:var(--bg)">
+  <div style="text-align:center;padding:40px 24px;width:100%;max-width:500px;margin:auto">
+    <div style="font-family:'Playfair Display',serif;font-size:36px;font-weight:900;color:var(--gold);margin-bottom:6px">♠♥♦♣</div>
+    <div style="font-family:'Playfair Display',serif;font-size:28px;font-weight:700;color:var(--gold);margin-bottom:8px">Select Game Mode</div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:36px">Choose your game for this session</div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <!-- Rummy -->
+      <div class="mode-card" onclick="selectMode('rummy')">
+        <div class="mode-icon">🃏</div>
+        <div class="mode-title">Indian Rummy</div>
+        <div class="mode-desc">201 point limit · Re-entry · Drop/FC/MD · Pot-based settlement</div>
+        <div class="mode-tag">Classic</div>
+      </div>
+      <!-- Stake -->
+      <div class="mode-card" onclick="selectMode('stake')">
+        <div class="mode-icon">🎯</div>
+        <div class="mode-title">Stake Game</div>
+        <div class="mode-desc">No point limit · Settle anytime · Points × stake value · Players join/leave freely</div>
+        <div class="mode-tag" style="background:rgba(155,89,245,.15);color:var(--purple);border-color:rgba(155,89,245,.3)">New</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ STAKE GAME SCREEN ═══════════ -->
+<div id="scr-stake" class="screen">
+  <div class="game-wrap">
+    <div class="stats-bar" id="sk-stats-bar"></div>
+
+    <!-- Stake scoreboard -->
+    <div class="tbl-section">
+      <div class="tbl-head">
+        <div class="tbl-title">Stake Scoreboard</div>
+        <div class="legend">
+          <div class="leg"><div class="leg-dot" style="background:var(--green)"></div>Rummy (0)</div>
+          <div class="leg"><div class="leg-dot" style="background:var(--text3)"></div>Drop</div>
+          <div class="leg"><div class="leg-dot" style="background:var(--amber)"></div>Mid drop</div>
+          <div class="leg"><div class="leg-dot" style="background:var(--red)"></div>Full count</div>
+        </div>
+      </div>
+      <div class="tbl-wrap"><table class="mt" id="sk-tbl"></table></div>
+      <div class="econ" id="sk-econ">
+        <button class="btn btn-gold" onclick="skSubmitRound()" id="sk-btn-submit">Submit Round</button>
+        <button class="btn btn-teal btn-sm" onclick="skSettle()">Settle Now</button>
+        <button class="btn btn-sm" onclick="skAddPlayer()">+ Player</button>
+        <button class="btn btn-amber btn-sm" onclick="skLeavePlayer()">− Leave</button>
+        <button class="btn btn-red btn-sm" onclick="skEndGame()">End Game</button>
+        <span class="note" id="sk-enote"></span>
+        <div class="err" id="sk-err-round" style="margin-top:0;flex-basis:100%"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ STAKE SETUP SCREEN ═══════════ -->
+<div id="scr-stake-setup" class="screen">
+  <div class="setup-wrap">
+    <div class="setup-hero">
+      <div class="setup-suits">🎯</div>
+      <div class="setup-title">Stake Game</div>
+      <div class="setup-sub">Points × Stake Value — settle anytime</div>
+    </div>
+
+    <div class="scard">
+      <div class="scard-title">Select Players (2–12)</div>
+      <div class="chip-grid" id="sk-preset-chips"></div>
+      <div id="sk-manual-row" style="display:none">
+        <div class="manual-row">
+          <input id="sk-manual-inp" placeholder="Full name, e.g. Raj Kumar">
+          <button class="btn btn-purple btn-sm" onclick="skAddManual()">+ Add</button>
+        </div>
+      </div>
+      <div style="margin-top:13px">
+        <div class="scard-title" style="margin-bottom:9px">Selected Players</div>
+        <div class="sel-wrap" id="sk-sel-display"><span style="font-size:12px;color:var(--text3)">None selected</span></div>
+      </div>
+      <div class="err" id="sk-err-players"></div>
+    </div>
+
+    <div class="scard">
+      <div class="scard-title">Stake Settings</div>
+      <div class="sgrid">
+        <div class="field"><label>Stake per point ($)</label><input type="number" id="sk-stake" value="1" min="0.1" step="0.1"></div>
+        <div class="field"><label>Drop Score (D)</label><input type="number" id="sk-drop" value="25" min="1"></div>
+        <div class="field"><label>Middle Drop (MD)</label><input type="number" id="sk-mid" value="50" min="1"></div>
+        <div class="field"><label>Full Count (FC)</label><input type="number" id="sk-full" value="80" min="1"></div>
+        <div class="field"><label>Wrong Show (WS)</label><input type="number" id="sk-ws" value="80" min="1"></div>
+      </div>
+      <div style="margin-top:10px;padding:9px 12px;background:rgba(155,89,245,.05);border:1px solid rgba(155,89,245,.15);border-radius:var(--radius-sm);font-size:11px;color:var(--text3);line-height:1.65">
+        ⓘ No point limit — play as many rounds as you want. Settle at any time.
+        Payment = (your points − best player's points) × stake per point.
+        Players can join or leave at any time.
+      </div>
+      <div class="err" id="sk-err-cfg"></div>
+    </div>
+
+    <div class="setup-foot" style="justify-content:space-between">
+      <button class="btn btn-sm" onclick="selectMode('rummy')" style="font-size:12px">← Back</button>
+      <button class="btn btn-gold" onclick="skStartGame()" style="font-size:15px;padding:11px 30px;letter-spacing:.08em">START STAKE GAME 🎯</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ STAKE SETTLE MODAL ═══════════ -->
+<div class="mov" id="mod-sk-settle">
+  <div class="modal" style="max-width:580px">
+    <div class="modal-title">Stake Settlement</div>
+    <div class="modal-sub" id="sk-settle-sub"></div>
+    <div id="sk-settle-body"></div>
+    <div class="mfoot">
+      <button class="btn" onclick="closeSkSettle()">Back to Game</button>
+      <button class="btn btn-red" onclick="skEndGame()">End &amp; Save Session</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ STAKE ADD PLAYER MODAL ═══════════ -->
+<div class="mov" id="mod-sk-addplayer">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-title">Add Player</div>
+    <div class="modal-sub" id="sk-add-sub">New player joins at the current average score.</div>
+    <div class="chip-grid" id="sk-add-chips" style="margin-bottom:12px"></div>
+    <div class="manual-row" style="margin-bottom:12px">
+      <input id="sk-add-inp" placeholder="Or enter full name">
+      <button class="btn btn-purple btn-sm" onclick="skConfirmAddPlayer()">Add</button>
+    </div>
+    <div class="err" id="sk-add-err"></div>
+    <div class="mfoot">
+      <button class="btn" onclick="closeSkAdd()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ STAKE LEAVE MODAL ═══════════ -->
+<div class="mov" id="mod-sk-leave">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-title">Player Leaving</div>
+    <div class="modal-sub">Select the player who is leaving. Their final score is locked.</div>
+    <div id="sk-leave-body"></div>
+    <div class="err" id="sk-leave-err"></div>
+    <div class="mfoot">
+      <button class="btn" onclick="closeSkLeave()">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <div id="scr-pin" class="pin-overlay" style="display:none">
   <div class="pin-card">
     <div class="pin-logo">♠♥♦♣</div>
@@ -2613,6 +2789,475 @@ function toast(msg,type=''){
 function showErr(id,msg){const e=document.getElementById(id);if(msg)e.textContent=msg;e.classList.add('show');}
 function hideErr(id){document.getElementById(id).classList.remove('show');}
 
+/* ─── GAME MODE SELECTOR ────────────────────────────── */
+function selectMode(mode){
+  document.getElementById('mod-gamemode').classList.remove('open');
+  if(mode==='rummy'){
+    switchScreen('scr-setup');
+    initSetup();
+  } else {
+    switchScreen('scr-stake-setup');
+    skInitSetup();
+  }
+}
+
+/* ═══════════════════════════════════════════════════════
+   STAKE GAME
+═══════════════════════════════════════════════════════ */
+let SK={};
+let skSelPlayers=[];
+
+function skInitSetup(){
+  skSelPlayers=[];
+  const wrap=document.getElementById('sk-preset-chips');
+  wrap.innerHTML='';
+  PRESET.forEach(n=>{
+    const d=document.createElement('div');
+    d.className='pchip';d.textContent=n;d.dataset.name=n;
+    d.onclick=()=>skTogglePreset(d,n);
+    wrap.appendChild(d);
+  });
+  const m=document.createElement('div');
+  m.className='pchip mc';m.textContent='+ Manual Entry';
+  m.onclick=()=>{const r=document.getElementById('sk-manual-row');r.style.display=r.style.display==='none'?'block':'none';};
+  wrap.appendChild(m);
+  skRenderSel();
+}
+
+function skTogglePreset(el,name){
+  const i=skSelPlayers.findIndex(p=>p.name===name);
+  if(i>=0){skSelPlayers.splice(i,1);el.classList.remove('active');}
+  else{if(skSelPlayers.length>=12){toast('Max 12','red');return;}skSelPlayers.push({name,abbr:name.slice(0,2).toUpperCase()});el.classList.add('active');}
+  skRenderSel();
+}
+function skAddManual(){
+  const inp=document.getElementById('sk-manual-inp');const raw=inp.value.trim();
+  if(!raw){toast('Enter a name','red');return;}
+  if(skSelPlayers.length>=12){toast('Max 12','red');return;}
+  if(skSelPlayers.find(p=>p.name===raw)){toast('Already added','red');return;}
+  const pts=raw.split(/\s+/);
+  const ab=pts.length>=2?(pts[0][0]+pts[1][0]).toUpperCase():raw.slice(0,2).toUpperCase();
+  skSelPlayers.push({name:raw,abbr:ab});inp.value='';skRenderSel();toast(`Added ${ab}`,'teal');
+}
+function skRenderSel(){
+  const el=document.getElementById('sk-sel-display');
+  if(!skSelPlayers.length){el.innerHTML='<span style="font-size:12px;color:var(--text3)">None selected</span>';return;}
+  el.innerHTML=skSelPlayers.map((p,i)=>`<div class="sel-tag pc${i%12}"><span class="pct${i%12}" style="font-weight:700">${p.abbr}</span>${p.name!==p.abbr?`<span style="opacity:.6">${p.name}</span>`:''}<span class="x" onclick="skRemoveSel(${i})">×</span></div>`).join('');
+}
+function skRemoveSel(i){
+  const name=skSelPlayers[i].name;skSelPlayers.splice(i,1);
+  document.querySelectorAll('#sk-preset-chips .pchip').forEach(c=>{if(c.dataset.name===name)c.classList.remove('active');});
+  skRenderSel();
+}
+function skStartGame(){
+  hideErr('sk-err-players');hideErr('sk-err-cfg');
+  if(skSelPlayers.length<2){showErr('sk-err-players','Select at least 2 players');return;}
+  const stake=+document.getElementById('sk-stake').value;
+  const drop =+document.getElementById('sk-drop').value;
+  const mid  =+document.getElementById('sk-mid').value;
+  const full =+document.getElementById('sk-full').value;
+  const ws   =+document.getElementById('sk-ws').value;
+  if([stake,drop,mid,full,ws].some(v=>!v||v<=0)){showErr('sk-err-cfg','All values must be positive');return;}
+  SK={players:skSelPlayers.map((p,i)=>({...p,ci:i%12,active:true})),cfg:{stake,drop,mid,full,ws},rounds:[],banks:{},roundNum:0};
+  SK.players.forEach(p=>{SK.banks[p.abbr]=0;});
+  switchScreen('scr-stake');skRenderAll();
+}
+
+function skActivePlayers(){return SK.players.filter(p=>p.active);}
+
+function skRenderAll(){skRenderStatsBar();skRenderTable();}
+
+function skRenderStatsBar(){
+  const n=SK.rounds.filter(r=>r.scores).length;
+  document.getElementById('sk-stats-bar').innerHTML=`
+    <div class="spill">D:<b>${SK.cfg.drop}</b></div>
+    <div class="spill">MD:<b>${SK.cfg.mid}</b></div>
+    <div class="spill">FC:<b>${SK.cfg.full}</b></div>
+    <div class="spill">WS:<b>${SK.cfg.ws}</b></div>
+    <div class="spill">Stake:<b>$${SK.cfg.stake}/pt</b></div>
+    <div class="spill">Round:<b>${n+1}</b></div>`;
+}
+
+function skRenderTable(){
+  const tbl=document.getElementById('sk-tbl');
+  const{players,cfg,rounds,banks}=SK;
+  let h='<thead><tr><th><div class="thi" style="color:var(--text3);font-size:10px;font-family:\'Fira Code\',monospace">ROUND</div></th>';
+  players.forEach(p=>{
+    const bank=banks[p.abbr]||0;
+    const bc=bank>0?'sk-bank-pos':bank<0?'sk-bank-neg':'sk-bank-zero';
+    const dv=(bank*SK.cfg.stake).toFixed(2);
+    const dc=bank>0?'var(--green)':bank<0?'var(--red)':'var(--text2)';
+    h+=`<th><div class="thi">
+      <div class="th-abbr pct${p.ci}">${p.abbr}${!p.active?`<span class="sk-left-badge">LEFT</span>`:''}</div>
+      <div class="th-name">${p.name!==p.abbr?p.name:''}</div>
+      <div class="${bc}" style="font-size:13px;font-weight:700;margin-top:4px">${bank>0?'+':''}${bank} pts</div>
+      <div style="font-size:10px;color:${dc};margin-top:1px">${bank>=0?'+':''}$${dv}</div>
+    </div></th>`;
+  });
+  h+='</tr></thead><tbody>';
+
+  let rNum=0;
+  rounds.forEach((r,ri)=>{
+    if(r.joinFor){h+=`<tr class="rrow" style="background:rgba(246,201,14,.07);color:var(--gold)"><td colspan="${players.length+1}">♠ ${r.joinFor} joined — starts at 0 pts</td></tr>`;return;}
+    if(r.rejoinFor){
+      const bank=SK.banks[r.rejoinFor]||0;
+      h+=`<tr class="rrow" style="background:rgba(255,173,66,.07);color:var(--amber)"><td colspan="${players.length+1}">↩ ${r.rejoinFor} rejoined — bank resumes at ${bank>0?'+':''}${bank} pts ($${(bank*SK.cfg.stake).toFixed(2)})</td></tr>`;return;
+    }
+    if(r.leaveFor){
+      const bank=banks[r.leaveFor]||0;
+      h+=`<tr class="rrow" style="background:rgba(255,173,66,.07);color:var(--amber)"><td colspan="${players.length+1}">← ${r.leaveFor} left — bank: ${bank>0?'+':''}${bank} pts ($${(bank*SK.cfg.stake).toFixed(2)})</td></tr>`;return;
+    }
+    rNum++;
+    h+=`<tr><td style="white-space:nowrap">R${rNum}<button class="ebtn" onclick="skOpenEdit(${ri})" title="Edit">✏️</button></td>`;
+    players.forEach(p=>{
+      const v=r.scores&&r.scores[p.abbr]!==undefined?r.scores[p.abbr]:null;
+      if(v===null){h+=`<td class="cv-dash">—</td>`;return;}
+      h+=`<td class="${skCellClass(v,cfg)}">${v===0?'🏆':v}</td>`;
+    });
+    h+='</tr>';
+  });
+
+  // BANK ROW
+  h+='<tr class="trow"><td>BANK</td>';
+  players.forEach(p=>{
+    const bank=banks[p.abbr]||0;
+    const bc=bank>0?'sc-safe':bank<0?'sc-danger':'';
+    h+=`<td><div class="${bc}" style="font-size:15px;font-weight:700;font-family:'Rajdhani',sans-serif">${bank>0?'+':''}${bank}</div>
+      <div style="font-size:10px;opacity:.6">${bank>=0?'+':''}$${(bank*SK.cfg.stake).toFixed(2)}</div></td>`;
+  });
+  h+='</tr>';
+
+  // ENTRY ROW
+  const active=skActivePlayers();
+  if(active.length>=2){
+    h+=`<tr class="entry-row"><td>NEW</td>`;
+    players.forEach(p=>{
+      if(!p.active){h+=`<td style="color:var(--text3);font-size:10px">left</td>`;return;}
+      h+=`<td>
+        <input class="einp" id="sk-inp-${p.abbr}" type="number" min="0" max="${cfg.full}" placeholder="0–${cfg.full}" oninput="skOnInput('${p.abbr}',this)">
+        <div class="qrow">
+          <button class="qb qb-d"  onclick="skSetQ('${p.abbr}','D')">D</button>
+          <button class="qb qb-md" onclick="skSetQ('${p.abbr}','MD')">MD</button>
+          <button class="qb qb-fc" onclick="skSetQ('${p.abbr}','FC')">FC</button>
+          <button class="qb qb-ws" onclick="skSetQ('${p.abbr}','WS')">WS</button>
+          <button class="qb qb-r" id="sk-rbtn-${p.abbr}" onclick="skSetQ('${p.abbr}','R')">R</button>
+        </div>
+        <span class="flbl" id="sk-fl-${p.abbr}"></span>
+      </td>`;
+    });
+    h+='</tr>';
+  }
+  h+='</tbody>';
+  tbl.innerHTML=h;
+  document.getElementById('sk-enote').innerHTML=`Max: ${cfg.full}. <b style="color:var(--amber)">⚠ One R (winner) per round required.</b>`;
+  setTimeout(()=>skUpdateRummyIndicator(),0);
+}
+
+function skCellClass(v,cfg){
+  if(v===0)return'cv0';
+  if(v===cfg.drop&&v!==cfg.full)return'cv-d';
+  if(v===cfg.mid&&v!==cfg.full)return'cv-md';
+  if(v>=cfg.full)return'cv-fc';
+  if(v===cfg.ws&&cfg.ws!==cfg.full)return'cv-ws';
+  return'';
+}
+
+const skScoreTypeMap={};
+function skSetQ(abbr,type){
+  const inp=document.getElementById('sk-inp-'+abbr);if(!inp)return;
+  inp.value={D:SK.cfg.drop,MD:SK.cfg.mid,FC:SK.cfg.full,WS:SK.cfg.ws,R:0}[type];
+  inp.classList.remove('ierr');skScoreTypeMap[abbr]=type;
+  const fl=document.getElementById('sk-fl-'+abbr);
+  if(fl){fl.textContent=FUNNY[type][Math.floor(Math.random()*FUNNY[type].length)];setTimeout(()=>{fl.textContent='';},2800);}
+  skUpdateRummyIndicator();
+}
+function skOnInput(abbr,inp){inp.classList.remove('ierr');hideErr('sk-err-round');delete skScoreTypeMap[abbr];skUpdateRummyIndicator();}
+function skUpdateRummyIndicator(){
+  const active=skActivePlayers();
+  let rummyAbbr=null;
+  active.forEach(p=>{const inp=document.getElementById('sk-inp-'+p.abbr);if(inp&&inp.value==='0')rummyAbbr=p.abbr;});
+  active.forEach(p=>{
+    const rBtn=document.getElementById('sk-rbtn-'+p.abbr);if(!rBtn)return;
+    rBtn.disabled=false;rBtn.style.opacity='1';
+    if(rummyAbbr===null){rBtn.style.background='rgba(192,112,16,.12)';rBtn.style.color='var(--amber)';rBtn.style.borderColor='var(--amber)';rBtn.style.fontWeight='700';}
+    else if(p.abbr===rummyAbbr){rBtn.style.background='var(--green)';rBtn.style.color='#fff';rBtn.style.borderColor='var(--green)';rBtn.style.fontWeight='700';}
+    else{rBtn.style.background='';rBtn.style.color='var(--text3)';rBtn.style.borderColor='var(--text3)';rBtn.style.fontWeight='';}
+  });
+}
+
+function skSubmitRound(){
+  hideErr('sk-err-round');
+  const active=skActivePlayers();if(active.length<2)return;
+  const cfg=SK.cfg;const scores={};let hasErr=false,zeroCount=0,errMsg='';
+  for(const p of active){
+    const inp=document.getElementById('sk-inp-'+p.abbr);const raw=inp?inp.value.trim():'';const val=Number(raw);
+    if(raw===''||isNaN(val)||val<0){if(inp)inp.classList.add('ierr');errMsg='Score required for all active players.';hasErr=true;}
+    else if(val===1){if(inp)inp.classList.add('ierr');errMsg='Score of 1 not valid. Use 0 or 2+.';hasErr=true;}
+    else if(val>cfg.full&&val!==cfg.ws){if(inp)inp.classList.add('ierr');errMsg=`Max score is ${cfg.full}.`;hasErr=true;}
+    else{if(inp)inp.classList.remove('ierr');scores[p.abbr]=Math.round(val);if(val===0)zeroCount++;}
+  }
+  if(hasErr){showErr('sk-err-round',errMsg);return;}
+  if(zeroCount===0){showErr('sk-err-round','Every round must have one winner (R=0)!');return;}
+  if(zeroCount>1){showErr('sk-err-round','Only one player can win (R=0) per round!');return;}
+
+  // Update banks: winner gets sum of all others; others lose their score
+  const winner=active.find(p=>scores[p.abbr]===0);
+  let winGain=0;
+  active.forEach(p=>{if(p.abbr!==winner.abbr){SK.banks[p.abbr]-=scores[p.abbr];winGain+=scores[p.abbr];}});
+  SK.banks[winner.abbr]+=winGain;
+  SK.rounds.push({scores});SK.roundNum++;
+  Object.keys(skScoreTypeMap).forEach(k=>delete skScoreTypeMap[k]);
+  const summary=active.map(p=>`${p.abbr}:${scores[p.abbr]===0?'R':scores[p.abbr]}`).join(' · ');
+  toast(`R${SK.roundNum} ✓  ${summary}`,'gold');
+  skRenderAll();
+}
+
+function skOpenEdit(ri){
+  const r=SK.rounds[ri];if(!r||!r.scores)return;
+  const cfg=SK.cfg;const pip=SK.players.filter(p=>r.scores&&r.scores[p.abbr]!==undefined);
+  document.getElementById('edit-sub').textContent=`Editing Stake Round ${ri+1}`;
+  let h='';
+  pip.forEach(p=>{
+    h+=`<div class="ecell"><div class="echd"><div class="eavt pc${p.ci}">${p.abbr}</div><div style="font-size:11px;color:var(--text2)">${p.name}</div></div>
+      <input class="einp" id="sk-ei-${p.abbr}" type="number" min="0" max="${cfg.full}" value="${r.scores[p.abbr]}" style="width:100%">
+      <div class="qrow" style="margin-top:5px">
+        <button class="qb qb-d" onclick="skSetEQ('${p.abbr}','D')">D</button>
+        <button class="qb qb-md" onclick="skSetEQ('${p.abbr}','MD')">MD</button>
+        <button class="qb qb-fc" onclick="skSetEQ('${p.abbr}','FC')">FC</button>
+        <button class="qb qb-ws" onclick="skSetEQ('${p.abbr}','WS')">WS</button>
+        <button class="qb qb-r" onclick="skSetEQ('${p.abbr}','R')">R</button>
+      </div></div>`;
+  });
+  document.getElementById('edit-grid').innerHTML=h;hideErr('err-edit');
+  document.querySelector('#mod-edit .btn-amber').onclick=()=>skSaveEdit(ri);
+  document.getElementById('mod-edit').classList.add('open');
+}
+function skSetEQ(abbr,type){
+  const inp=document.getElementById('sk-ei-'+abbr);if(!inp)return;
+  inp.value={D:SK.cfg.drop,MD:SK.cfg.mid,FC:SK.cfg.full,WS:SK.cfg.ws,R:0}[type];
+}
+function skSaveEdit(ri){
+  hideErr('err-edit');const r=SK.rounds[ri];const cfg=SK.cfg;
+  const pip=SK.players.filter(p=>r.scores&&r.scores[p.abbr]!==undefined);
+  const ns={};let hasErr=false,zeroCount=0,errMsg='';
+  for(const p of pip){
+    const inp=document.getElementById('sk-ei-'+p.abbr);const raw=inp?inp.value.trim():'';const val=Number(raw);
+    if(raw===''||isNaN(val)||val<0){inp&&inp.classList.add('ierr');errMsg='All scores required.';hasErr=true;}
+    else if(val===1){inp&&inp.classList.add('ierr');errMsg='Score of 1 not valid.';hasErr=true;}
+    else if(val>cfg.full&&val!==cfg.ws){inp&&inp.classList.add('ierr');errMsg=`Max ${cfg.full}.`;hasErr=true;}
+    else{inp&&inp.classList.remove('ierr');ns[p.abbr]=Math.round(val);if(val===0)zeroCount++;}
+  }
+  if(hasErr){showErr('err-edit',errMsg);return;}
+  if(zeroCount===0){showErr('err-edit','One winner (R=0) required!');return;}
+  if(zeroCount>1){showErr('err-edit','Only one R=0 per round!');return;}
+  SK.rounds[ri].scores=ns;
+  skRecomputeBanks();
+  closeEdit();
+  document.querySelector('#mod-edit .btn-amber').onclick=saveEdit;
+  skRenderAll();toast('Round updated!','amber');
+}
+function skRecomputeBanks(){
+  SK.players.forEach(p=>{SK.banks[p.abbr]=0;});
+  SK.rounds.forEach(r=>{
+    if(!r.scores)return; // skip join/leave/rejoin marker rows
+    const rp=SK.players.filter(p=>r.scores[p.abbr]!==undefined);
+    const winner=rp.find(p=>r.scores[p.abbr]===0);if(!winner)return;
+    let wg=0;
+    rp.forEach(p=>{if(p.abbr!==winner.abbr){SK.banks[p.abbr]-=r.scores[p.abbr];wg+=r.scores[p.abbr];}});
+    SK.banks[winner.abbr]+=wg;
+  });
+}
+
+function skAddPlayer(){
+  hideErr('sk-add-err');
+  document.getElementById('sk-add-inp').value='';
+
+  // Split into: left players (can rejoin) vs available presets (new)
+  const leftPlayers=SK.players.filter(p=>!p.active);
+  const usedNames=new Set(SK.players.map(p=>p.name));
+  const availPresets=PRESET.filter(n=>!usedNames.has(n));
+
+  let chipsHtml='';
+
+  // Left players first — highlighted differently
+  if(leftPlayers.length>0){
+    chipsHtml+=`<div style="font-size:10px;color:var(--amber);font-family:'Fira Code',monospace;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;margin-top:2px">Rejoin (resumes existing bank)</div>`;
+    chipsHtml+=leftPlayers.map(p=>{
+      const bank=SK.banks[p.abbr]||0;
+      const dv=(bank*SK.cfg.stake).toFixed(2);
+      const bankStr=`${bank>0?'+':''}${bank}pts ($${dv})`;
+      return `<div class="pchip" style="border-color:var(--amber);color:var(--amber)" onclick="skSelectAddChip(this,'${p.name}',true)">${p.abbr} <small style="opacity:.7">${bankStr}</small></div>`;
+    }).join('');
+    if(availPresets.length>0){
+      chipsHtml+=`<div style="font-size:10px;color:var(--text3);font-family:'Fira Code',monospace;text-transform:uppercase;letter-spacing:.08em;margin:10px 0 6px">New Player</div>`;
+    }
+  }
+
+  // New preset players
+  chipsHtml+=availPresets.map(n=>`<div class="pchip" onclick="skSelectAddChip(this,'${n}',false)">${n}</div>`).join('');
+  if(!chipsHtml)chipsHtml='<span style="font-size:12px;color:var(--text3)">All presets in use</span>';
+
+  document.getElementById('sk-add-chips').innerHTML=chipsHtml;
+  document.getElementById('sk-add-sub').textContent='Select a player to add or rejoin.';
+  document.getElementById('mod-sk-addplayer').classList.add('open');
+}
+let skAddSelectedName=null;
+let skAddIsRejoin=false;
+function skSelectAddChip(el,name,isRejoin){
+  skAddSelectedName=name;skAddIsRejoin=isRejoin||false;
+  document.getElementById('sk-add-inp').value='';
+  document.querySelectorAll('#sk-add-chips .pchip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');hideErr('sk-add-err');
+  // Update sub text
+  if(isRejoin){
+    const p=SK.players.find(pp=>pp.name===name);
+    const bank=p?SK.banks[p.abbr]||0:0;
+    const dv=p?(bank*SK.cfg.stake).toFixed(2):'0';
+    document.getElementById('sk-add-sub').textContent=`${name} will REJOIN with existing bank: ${bank>0?'+':''}${bank} pts ($${dv})`;
+  } else {
+    document.getElementById('sk-add-sub').textContent=`${name} will join as a NEW player starting at 0 pts.`;
+  }
+}
+function skConfirmAddPlayer(){
+  hideErr('sk-add-err');
+  const inputVal=document.getElementById('sk-add-inp').value.trim();
+  const rawName=inputVal||skAddSelectedName||'';
+  if(!rawName){showErr('sk-add-err','Select or enter a name');return;}
+
+  // Check if it's a rejoin (left player coming back)
+  const existingPlayer=SK.players.find(p=>p.name===rawName&&!p.active);
+  if(existingPlayer||skAddIsRejoin){
+    // Rejoin — reactivate player, keep bank as-is
+    const p=existingPlayer||SK.players.find(pp=>pp.name===rawName);
+    if(!p){showErr('sk-add-err','Player not found');return;}
+    p.active=true;
+    const bank=SK.banks[p.abbr]||0;
+    SK.rounds.push({rejoinFor:p.abbr,bankAtRejoin:bank});
+    skAddSelectedName=null;skAddIsRejoin=false;closeSkAdd();
+    toast(`${p.abbr} rejoined! Bank resumes at ${bank>0?'+':''}${bank} pts`,'amber');
+    skRenderAll();
+    return;
+  }
+
+  // New player
+  if(SK.players.find(p=>p.name===rawName&&p.active)){showErr('sk-add-err','Already in game');return;}
+  const pts=rawName.split(/\s+/);
+  const ab=pts.length>=2?(pts[0][0]+pts[1][0]).toUpperCase():rawName.slice(0,2).toUpperCase();
+  const ci=SK.players.length%12;
+  SK.players.push({name:rawName,abbr:ab,ci,active:true});
+  SK.banks[ab]=0;
+  SK.rounds.push({joinFor:ab});
+  skAddSelectedName=null;skAddIsRejoin=false;closeSkAdd();
+  toast(`${ab} joined at 0 pts!`,'gold');skRenderAll();
+}
+function closeSkAdd(){skAddSelectedName=null;skAddIsRejoin=false;document.getElementById('mod-sk-addplayer').classList.remove('open');}
+
+function skLeavePlayer(){
+  const active=skActivePlayers();
+  if(active.length<=2){toast('Need at least 2 players to continue','red');return;}
+  let h='';
+  active.forEach(p=>{
+    const bank=SK.banks[p.abbr]||0;
+    const dv=(bank*SK.cfg.stake).toFixed(2);
+    h+=`<div class="confirm-row" style="cursor:pointer" onclick="skConfirmLeave('${p.abbr}')">
+      <div>
+        <div class="confirm-abbr pct${p.ci}">${p.abbr}</div>
+        <div class="confirm-tag">${p.name} · Bank: ${bank>0?'+':''}${bank} pts ($${dv})</div>
+      </div>
+      <div style="color:var(--amber);font-size:12px;font-family:'Rajdhani',sans-serif">← Leave</div>
+    </div>`;
+  });
+  document.getElementById('sk-leave-body').innerHTML=h;
+  hideErr('sk-leave-err');
+  document.getElementById('mod-sk-leave').classList.add('open');
+}
+function skConfirmLeave(abbr){
+  const p=SK.players.find(pp=>pp.abbr===abbr);if(!p)return;
+  p.active=false;
+  SK.rounds.push({leaveFor:abbr});
+  closeSkLeave();
+  const bank=SK.banks[abbr]||0;
+  toast(`${abbr} left. Bank locked: ${bank>0?'+':''}${bank} pts ($${(bank*SK.cfg.stake).toFixed(2)})`,'amber');
+  skRenderAll();
+}
+function closeSkLeave(){document.getElementById('mod-sk-leave').classList.remove('open');}
+
+function skSettle(){
+  const rounds=SK.rounds.filter(r=>r.scores).length;
+  document.getElementById('sk-settle-sub').textContent=`${rounds} round${rounds!==1?'s':''} · $${SK.cfg.stake}/pt`;
+  const allPlayers=[...SK.players].sort((a,b)=>(SK.banks[b.abbr]||0)-(SK.banks[a.abbr]||0));
+  let h=`<div class="sstats" style="margin-bottom:14px">
+    <div class="ssbox"><div class="sslabel">Rounds</div><div class="ssval">${rounds}</div></div>
+    <div class="ssbox"><div class="sslabel">Stake/Point</div><div class="ssval">$${SK.cfg.stake}</div></div>
+    <div class="ssbox"><div class="sslabel">Players</div><div class="ssval">${SK.players.length}</div></div>
+  </div>`;
+  allPlayers.forEach((p,i)=>{
+    const bank=SK.banks[p.abbr]||0;const dv=bank*SK.cfg.stake;
+    const nc=dv>0?'mp':dv<0?'mn':'mz';const medal=i===0?'🥇':i===1?'🥈':i===2?'🥉':`${i+1}.`;
+    h+=`<div class="srow">
+      <div class="srank">${medal}</div><div class="savt pc${p.ci}">${p.abbr}</div>
+      <div style="flex:1">
+        <div class="sname pct${p.ci}">${p.name}${!p.active?` <span class="sk-left-badge">LEFT</span>`:''}</div>
+        <div class="ssub">${bank>0?'+':''}${bank} pts × $${SK.cfg.stake} = ${dv>=0?'+':''}$${dv.toFixed(2)}</div>
+      </div>
+      <div class="snet ${nc}">${dv>=0?'+':''}$${dv.toFixed(2)}</div>
+    </div>`;
+  });
+  h+=`<div style="height:1px;background:var(--bdr2);margin:14px 0"></div>
+    <div style="font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--teal);margin-bottom:8px">Who Pays Whom</div>`;
+  const balances={};SK.players.forEach(p=>{balances[p.abbr]=(SK.banks[p.abbr]||0)*SK.cfg.stake;});
+  const txns=[];let safety=0;
+  while(safety++<200){
+    const cred=SK.players.filter(p=>balances[p.abbr]>0.005).sort((a,b)=>balances[b.abbr]-balances[a.abbr]);
+    const debt=SK.players.filter(p=>balances[p.abbr]<-0.005).sort((a,b)=>balances[a.abbr]-balances[b.abbr]);
+    if(!cred.length||!debt.length)break;
+    const cr=cred[0],db=debt[0];
+    const amt=Math.round(Math.min(balances[cr.abbr],Math.abs(balances[db.abbr]))*100)/100;
+    if(amt<0.005)break;
+    txns.push({from:db,to:cr,amount:amt});
+    balances[cr.abbr]=Math.round((balances[cr.abbr]-amt)*100)/100;
+    balances[db.abbr]=Math.round((balances[db.abbr]+amt)*100)/100;
+  }
+  h+=txns.length===0
+    ?`<div style="text-align:center;color:var(--text3);font-size:13px;padding:12px 0">🎉 All square!</div>`
+    :txns.map(t=>`<div class="pay-row">
+      <div class="pay-avt pc${t.from.ci}">${t.from.abbr}</div>
+      <div class="pay-name pct${t.from.ci}">${t.from.abbr}</div>
+      <div class="pay-arrow">→</div>
+      <div class="pay-name pct${t.to.ci}">${t.to.abbr}</div>
+      <div class="pay-avt pc${t.to.ci}">${t.to.abbr}</div>
+      <div class="pay-desc">${t.from.name} pays ${t.to.name}</div>
+      <div class="pay-amt">$${t.amount.toFixed(2)}</div>
+    </div>`).join('');
+  document.getElementById('sk-settle-body').innerHTML=h;
+  document.getElementById('mod-sk-settle').classList.add('open');
+}
+function closeSkSettle(){document.getElementById('mod-sk-settle').classList.remove('open');}
+
+function skEndGame(){
+  if(SK&&SK.players&&SK.rounds&&SK.rounds.filter(r=>r.scores).length>0){
+    const rounds=SK.rounds.filter(r=>r.scores).length;
+    const session={
+      id:Date.now(),
+      date:new Date().toLocaleString('en-IN',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}),
+      rounds,pot:0,expTotal:0,type:'stake',
+      players:SK.players.map(p=>({
+        abbr:p.abbr,name:p.name,ci:p.ci,
+        net:Math.round((SK.banks[p.abbr]||0)*SK.cfg.stake*100)/100,
+        score:SK.banks[p.abbr]||0,isOut:!p.active
+      })),
+      cfg:SK.cfg
+    };
+    const sessions=loadSessions();sessions.unshift(session);
+    if(sessions.length>30)sessions.splice(30);
+    saveSessions(sessions);
+    toast('Stake session saved ✓','teal');
+  }
+  document.getElementById('mod-sk-settle').classList.remove('open');
+  SK={};skSelPlayers=[];
+  document.getElementById('mod-gamemode').classList.add('open');
+}
+
 /* ─── BOOT ──────────────────────────────────────────── */
 /* ─── PIN SYSTEM ────────────────────────────────────── */
 const HARDCODED_PIN='1206';
@@ -2635,6 +3280,8 @@ function showPinScreen(mode){
 
 function hidePinScreen(){
   document.getElementById('scr-pin').style.display='none';
+  // Show game mode selector
+  document.getElementById('mod-gamemode').classList.add('open');
 }
 
 function pinPress(digit){
